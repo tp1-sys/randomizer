@@ -43,15 +43,15 @@
             100% { transform: scale(1); opacity: 1; }
         }
         .animate-pop {
-            animation: popIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation: popIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
         @keyframes pulseGlow {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.04); }
+            50% { transform: scale(1.06); }
         }
         .animate-spin-emoji {
-            animation: pulseGlow 0.25s infinite ease-in-out;
+            animation: pulseGlow 0.2s infinite ease-in-out;
         }
 
         #confetti-canvas {
@@ -248,6 +248,7 @@
 
         const FIXED_PARTICIPANTS = 9;
         let poolState = null; // { active: boolean, remainingIds: number[] }
+        let lastSyncTimestamp = 0;
         let isRolling = false;
         let isShowingResult = false;
 
@@ -257,17 +258,31 @@
             }
             syncFromCloud(true);
 
-            // Автообновление остатка каждые 8 секунд, если пользователь не смотрит свой результат
+            // Фоновая синхронизация каждые 6 секунд
             setInterval(() => {
                 if (!isRolling && !isShowingResult) {
                     syncFromCloud(false);
                 }
-            }, 8000);
+            }, 6000);
         });
 
+        async function fetchWithTimeout(url, options, timeoutMs = 5000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(timer);
+                return res;
+            } catch (err) {
+                clearTimeout(timer);
+                throw err;
+            }
+        }
+
         async function fetchCloudRecord() {
-            const response = await fetch(`${JSONBIN_URL}/latest`, {
+            const response = await fetchWithTimeout(`${JSONBIN_URL}/latest`, {
                 method: 'GET',
+                cache: 'no-store',
                 headers: {
                     'X-Master-Key': JSONBIN_MASTER_KEY,
                     'X-Bin-Meta': 'false'
@@ -276,11 +291,12 @@
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
+            lastSyncTimestamp = Date.now();
             return await response.json();
         }
 
         async function updateCloudRecord(data) {
-            const response = await fetch(JSONBIN_URL, {
+            const response = await fetchWithTimeout(JSONBIN_URL, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -291,6 +307,7 @@
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
+            lastSyncTimestamp = Date.now();
             return await response.json();
         }
 
@@ -379,11 +396,12 @@
 
         async function startPoolDraw() {
             const btn = document.getElementById('start-pool-btn');
+            const origText = btn.innerHTML;
             btn.disabled = true;
-            btn.classList.add('opacity-60');
+            btn.classList.add('opacity-70');
+            btn.innerHTML = '<span>⏳</span> Запуск пула...';
 
             try {
-                // Проверяем перед стартом, не запустил ли кто-то пул секунду назад с другого ПК
                 const current = await fetchCloudRecord();
                 if (current && current.active === true && Array.isArray(current.remainingIds)) {
                     poolState = current;
@@ -404,7 +422,8 @@
                 alert('Ошибка при запуске пула: ' + err.message);
             } finally {
                 btn.disabled = false;
-                btn.classList.remove('opacity-60');
+                btn.classList.remove('opacity-70');
+                btn.innerHTML = origText;
             }
         }
 
@@ -437,32 +456,35 @@
             isRolling = true;
 
             const btn = document.getElementById('pool-draw-btn');
+            const origBtnHtml = btn.innerHTML;
             const rouletteEmoji = document.getElementById('pool-roulette-emoji');
+
             btn.disabled = true;
-            btn.classList.add('opacity-60', 'cursor-not-allowed');
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            btn.innerHTML = '<span>⏳</span> Выбираем героя...';
             rouletteEmoji.classList.add('animate-spin-emoji');
 
             const interval = setInterval(() => {
                 const randomPreview = SHREK_CHARACTERS[Math.floor(Math.random() * SHREK_CHARACTERS.length)];
                 rouletteEmoji.textContent = randomPreview.emoji;
-            }, 75);
+            }, 65);
 
             try {
-                // 1. Загружаем самый свежий список из облака, чтобы исключить пересечение с другим ПК
-                const latest = await fetchCloudRecord();
+                // Если данные обновлялись меньше 2 секунд назад, используем их сразу без лишнего GET-запроса
+                let latest = poolState;
+                if (!latest || Date.now() - lastSyncTimestamp > 2000) {
+                    latest = await fetchCloudRecord();
+                }
 
                 if (!latest || !latest.active || !Array.isArray(latest.remainingIds) || latest.remainingIds.length === 0) {
                     clearInterval(interval);
-                    rouletteEmoji.classList.remove('animate-spin-emoji');
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-60', 'cursor-not-allowed');
-                    isRolling = false;
+                    resetDrawButton(btn, origBtnHtml, rouletteEmoji);
                     poolState = { active: true, remainingIds: [] };
                     openPoolScreen();
                     return;
                 }
 
-                // 2. Выбираем случайного из актуальных оставшихся и сразу сохраняем обновлённый пул в облако
+                // Выбираем случайного героя и сразу записываем обновлённый остаток в облако
                 const updatedIds = [...latest.remainingIds];
                 const randomIndex = Math.floor(Math.random() * updatedIds.length);
                 const chosenId = updatedIds[randomIndex];
@@ -476,24 +498,26 @@
                 await updateCloudRecord(newState);
                 poolState = newState;
 
-                // Небольшая пауза для плавности анимации рулетки
-                setTimeout(() => {
-                    clearInterval(interval);
-                    showDrawnCharacter(chosenId, btn, rouletteEmoji);
-                }, 600);
+                clearInterval(interval);
+                showDrawnCharacter(chosenId, btn, origBtnHtml, rouletteEmoji);
 
             } catch (err) {
                 clearInterval(interval);
-                rouletteEmoji.classList.remove('animate-spin-emoji');
+                resetDrawButton(btn, origBtnHtml, rouletteEmoji);
                 rouletteEmoji.textContent = '🎲';
-                btn.disabled = false;
-                btn.classList.remove('opacity-60', 'cursor-not-allowed');
-                isRolling = false;
-                alert('Ошибка синхронизации при выборе героя. Попробуйте ещё раз.');
+                alert('Ошибка связи при выборе героя. Нажмите кнопку ещё раз.');
             }
         }
 
-        function showDrawnCharacter(chosenId, btn, rouletteEmoji) {
+        function resetDrawButton(btn, origBtnHtml, rouletteEmoji) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            btn.innerHTML = origBtnHtml;
+            rouletteEmoji.classList.remove('animate-spin-emoji');
+            isRolling = false;
+        }
+
+        function showDrawnCharacter(chosenId, btn, origBtnHtml, rouletteEmoji) {
             const rem = poolState.remainingIds.length;
             updateHeaderCounter(rem);
             document.getElementById('pool-remaining-count').textContent = rem;
@@ -504,22 +528,20 @@
             document.getElementById('pool-result-name').textContent = charObj.name;
             document.getElementById('pool-result-desc').textContent = charObj.desc;
 
-            btn.disabled = false;
-            btn.classList.remove('opacity-60', 'cursor-not-allowed');
-            rouletteEmoji.classList.remove('animate-spin-emoji');
+            resetDrawButton(btn, origBtnHtml, rouletteEmoji);
 
             document.getElementById('pool-ready-box').classList.add('hidden');
             document.getElementById('pool-result-box').classList.remove('hidden');
 
-            isRolling = false;
             isShowingResult = true;
             launchConfetti();
         }
 
         function hidePoolResultForNext() {
             isShowingResult = false;
-            syncFromCloud(false);
             openPoolScreen();
+            // Фоновая проверка актуального остатка без блокировки интерфейса
+            syncFromCloud(false);
         }
 
         function launchConfetti() {
@@ -530,7 +552,7 @@
 
             const colors = ['#84cc16', '#bef264', '#22c55e', '#facc15', '#ffffff'];
 
-            const pieces = Array.from({ length: 75 }, () => ({
+            const pieces = Array.from({ length: 65 }, () => ({
                 x: canvas.width / 2 + (Math.random() - 0.5) * 180,
                 y: canvas.height / 2,
                 vx: (Math.random() - 0.5) * 14,
@@ -559,7 +581,7 @@
                 });
 
                 frame++;
-                if (frame < 75) {
+                if (frame < 65) {
                     requestAnimationFrame(animate);
                 } else {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
