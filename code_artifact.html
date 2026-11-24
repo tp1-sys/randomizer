@@ -67,20 +67,28 @@
     <canvas id="confetti-canvas"></canvas>
 
     <!-- Верхняя панель -->
-    <header class="w-full max-w-4xl mx-auto px-4 pt-6 pb-2 flex items-center justify-between">
+    <header class="w-full max-w-4xl mx-auto px-4 pt-6 pb-2 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center text-2xl bg-lime-500/20 border border-lime-400/30 shadow-lg">
                 🧅
             </div>
             <div>
                 <h1 class="font-extrabold text-lg sm:text-xl tracking-tight leading-none">Тайный Рандомайзер: Герои Шрека</h1>
-                <p class="text-xs opacity-70 mt-1">100% анонимно • Без повторов • Защита от спойлеров</p>
+                <p class="text-xs opacity-70 mt-1">100% анонимно • Без повторов • На одном устройстве</p>
             </div>
         </div>
 
-        <button id="reset-home-btn" onclick="resetToSetup()" class="hidden text-xs sm:text-sm px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition flex items-center gap-1.5 font-medium">
-            <span>↺</span> Новый розыгрыш
-        </button>
+        <div class="flex items-center gap-2.5">
+            <!-- Счётчик оставшихся мест в самом начале страницы -->
+            <div class="accent-badge px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow">
+                <span>🎟️</span>
+                <span>Осталось мест: <span id="header-remaining-count" class="text-white font-extrabold">9</span> из 9</span>
+            </div>
+
+            <button id="reset-home-btn" onclick="resetToSetup()" class="hidden text-xs sm:text-sm px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition flex items-center gap-1.5 font-medium">
+                <span>↺</span> Сбросить
+            </button>
+        </div>
     </header>
 
     <!-- Основной контейнер -->
@@ -90,11 +98,11 @@
         <section id="setup-screen" class="card-surface glass border rounded-3xl p-6 sm:p-8 shadow-2xl">
             <div class="text-center mb-7">
                 <span class="accent-badge inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border mb-3">
-                    Вселенная Шрека
+                    Вселенная Шрека • Свободно 9 из 9 мест
                 </span>
                 <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Анонимная жеребьёвка персонажей</h2>
                 <p class="text-sm opacity-75 mt-2 max-w-lg mx-auto">
-                    Имена участников не запрашиваются. Каждый персонаж выпадает строго один раз и навсегда исключается из общего пула.
+                    Имена участников не запрашиваются. Передавайте устройство по очереди — каждый персонаж выпадает строго один раз и навсегда исключается.
                 </p>
             </div>
 
@@ -104,32 +112,32 @@
                     <span class="text-3xl">👹</span>
                     <div>
                         <div class="font-bold text-lg">Герои Шрека</div>
-                        <div class="text-xs accent-text font-semibold">14 культовых персонажей в базе</div>
+                        <div class="text-xs accent-text font-semibold">15 культовых персонажей в базе (включая Барменшу Дорис)</div>
                     </div>
                 </div>
                 <p class="text-xs opacity-80 leading-relaxed mt-2">
-                    В розыгрыше участвуют 9 случайных героев из списка: Шрек, Осёл, Принцесса Фиона, Кот в сапогах, Лорд Фаркуад, Дракониха, Пряня, Пиноккио, Фея-Крёстная, Принц Чаминг, Серый Волк, Три слепых мышонка, Румпельштильцхен и Король Гарольд.
+                    В розыгрыше участвуют 9 случайных героев из списка: Шрек, Осёл, Принцесса Фиона, Кот в сапогах, Лорд Фаркуад, Дракониха, Пряня, Пиноккио, Фея-Крёстная, Принц Чаминг, Серый Волк, Три слепых мышонка, Румпельштильцхен, Король Гарольд и Барменша Дорис.
                 </p>
             </div>
 
             <!-- Фиксированное количество участников: 9 -->
             <div class="mb-7 bg-black/20 rounded-2xl p-4 border border-white/10 flex items-center justify-between">
                 <div>
-                    <div class="font-semibold text-sm">Количество участников</div>
-                    <div class="text-xs opacity-70 mt-0.5">Фиксированный пул без повторений</div>
+                    <div class="font-semibold text-sm">Количество мест в розыгрыше</div>
+                    <div class="text-xs opacity-70 mt-0.5">Фиксированный пул на 9 участников без повторений</div>
                 </div>
                 <div class="px-4 py-2 rounded-xl bg-white/10 border border-white/15 font-extrabold text-base accent-text">
-                    9 человек
+                    9 мест
                 </div>
             </div>
 
             <!-- Кнопка запуска -->
             <button onclick="startPoolDraw()" class="accent-btn w-full py-4 rounded-2xl font-extrabold text-base sm:text-lg shadow-xl transition transform active:scale-[0.99] flex items-center justify-center gap-2">
-                <span>✨</span> Запустить общий пул с исключением
+                <span>✨</span> Начать жеребьёвку (9 мест)
             </button>
         </section>
 
-        <!-- ЭКРАН 2: ОБЩИЙ ПУЛ С ИСКЛЮЧЕНИЕМ ПО ССЫЛКЕ -->
+        <!-- ЭКРАН 2: ОБЩИЙ ПУЛ НА ОДНОМ УСТРОЙСТВЕ -->
         <section id="pool-screen" class="hidden card-surface glass border rounded-3xl p-6 sm:p-8 shadow-2xl text-center">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-5 mb-6 border-b border-white/10">
                 <div class="flex items-center gap-2">
@@ -137,7 +145,7 @@
                     <span class="text-xs opacity-70">• Анонимный пул</span>
                 </div>
                 <div class="text-xs sm:text-sm font-semibold">
-                    Осталось ролей: <span id="pool-remaining-count" class="accent-text font-extrabold text-base">9</span> из <span id="pool-total-count">9</span>
+                    Осталось мест: <span id="pool-remaining-count" class="accent-text font-extrabold text-base">9</span> из <span id="pool-total-count">9</span>
                 </div>
             </div>
 
@@ -162,16 +170,13 @@
                     <h3 id="pool-result-name" class="text-2xl sm:text-3xl font-extrabold accent-text mb-2">Шрек</h3>
                     <p id="pool-result-desc" class="text-sm opacity-80 leading-relaxed">Благородный зелёный огр с болота.</p>
                     <div class="mt-4 pt-3 border-t border-white/10 text-[11px] opacity-60">
-                        ✔ Персонаж исключён из ссылки и больше никому не выпадет
+                        ✔ Персонаж исключён и больше никому не выпадет
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <button onclick="hidePoolResultForNext()" class="accent-btn w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
-                        <span>👁️</span> Скрыть от чужих глаз
-                    </button>
-                    <button id="copy-next-url-btn" onclick="copyCurrentPoolUrl()" class="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 font-semibold text-sm transition flex items-center justify-center gap-2">
-                        <span>📋</span> Скопировать ссылку для следующего
+                <div class="flex justify-center">
+                    <button onclick="hidePoolResultForNext()" class="accent-btn w-full sm:w-auto px-8 py-4 rounded-xl font-extrabold text-base shadow-lg transition flex items-center justify-center gap-2">
+                        <span>👁️</span> Скрыть и передать следующему
                     </button>
                 </div>
             </div>
@@ -179,9 +184,9 @@
             <!-- Состояние: Пул завершён -->
             <div id="pool-finished-box" class="hidden py-8 animate-pop">
                 <div class="text-6xl mb-4">🏁</div>
-                <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Все 9 персонажей разобраны!</h2>
+                <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Все 9 мест заняты!</h2>
                 <p class="text-sm opacity-75 max-w-md mx-auto mb-6">
-                    В этом пуле не осталось свободных ролей. Повторений не было, все результаты сохранились в тайне.
+                    Все персонажи разобраны без единого повторения, а результаты сохранились в полной тайне.
                 </p>
                 <button onclick="resetToSetup()" class="accent-btn px-7 py-3.5 rounded-xl font-bold text-sm shadow-lg">
                     Начать новый розыгрыш
@@ -193,7 +198,7 @@
 
     <!-- Подвал -->
     <footer class="w-full max-w-4xl mx-auto px-4 py-5 text-center text-xs opacity-55">
-        Данные не отправляются на сервер и нигде не хранятся с именами • Состояние исключений кодируется прямо в URL
+        Данные не отправляются на сервер и нигде не хранятся с именами • Прогресс сохраняется локально в браузере
     </footer>
 
     <script>
@@ -211,33 +216,51 @@
             { id: 10, name: 'Серый Волк', emoji: '🐺', desc: 'Спокойный любитель бабушкиных ночнушек и модных журналов, верный товарищ Шрека.' },
             { id: 11, name: 'Три слепых мышонка', emoji: '🐭', desc: 'Неразлучное музыкальное трио в тёмных очках, всегда готовое поддержать любую авантюру.' },
             { id: 12, name: 'Румпельштильцхен', emoji: '📜', desc: 'Хитрый мастер магических контрактов, умеющий вписать мелкий шрифт в любую сделку.' },
-            { id: 13, name: 'Король Гарольд', emoji: '🐸', desc: 'Правитель Тридевятого царства с большой тайной из прошлого, готовый на всё ради дочери.' }
+            { id: 13, name: 'Король Гарольд', emoji: '🐸', desc: 'Правитель Тридевятого царства с большой тайной из прошлого, готовый на всё ради дочери.' },
+            { id: 14, name: 'Барменша Дорис', emoji: '🍺', desc: 'Харизматичная хозяйка стойки в таверне «Ядовитое яблочко» с грозным голосом и доброй душой.' }
         ];
 
         const FIXED_PARTICIPANTS = 9;
+        const STORAGE_KEY = 'shrek_randomizer_pool_v1';
         let poolState = null;
         let isRolling = false;
 
-        window.addEventListener('DOMContentLoaded', handleUrlRouting);
-        window.addEventListener('hashchange', handleUrlRouting);
-
-        function handleUrlRouting() {
-            const hash = window.location.hash;
-
-            if (hash.startsWith('#p=')) {
-                const encoded = hash.slice(3);
-                const parsed = decodePayload(encoded);
-                if (parsed && Array.isArray(parsed.rem)) {
-                    poolState = {
-                        total: FIXED_PARTICIPANTS,
-                        remainingIds: parsed.rem
-                    };
-                    openPoolScreen();
-                    return;
-                }
+        window.addEventListener('DOMContentLoaded', () => {
+            // Очищаем возможные старые хэши из URL, чтобы ссылка оставалась чистой
+            if (window.location.hash) {
+                history.replaceState(null, '', window.location.pathname + window.location.search);
             }
 
-            showSetupScreen();
+            const saved = loadSavedPool();
+            if (saved) {
+                poolState = saved;
+                openPoolScreen();
+            } else {
+                updateHeaderCounter(FIXED_PARTICIPANTS);
+                showSetupScreen();
+            }
+        });
+
+        function updateHeaderCounter(remaining) {
+            document.getElementById('header-remaining-count').textContent = remaining;
+        }
+
+        function savePool() {
+            if (poolState) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(poolState));
+            }
+        }
+
+        function loadSavedPool() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (parsed && Array.isArray(parsed.remainingIds)) {
+                    return parsed;
+                }
+            } catch (e) {}
+            return null;
         }
 
         function hideAllScreens() {
@@ -249,34 +272,13 @@
             hideAllScreens();
             document.getElementById('setup-screen').classList.remove('hidden');
             document.getElementById('reset-home-btn').classList.add('hidden');
+            updateHeaderCounter(FIXED_PARTICIPANTS);
         }
 
         function resetToSetup() {
-            history.replaceState(null, '', window.location.pathname + window.location.search);
+            localStorage.removeItem(STORAGE_KEY);
             poolState = null;
             showSetupScreen();
-        }
-
-        function encodePayload(obj) {
-            const json = JSON.stringify(obj);
-            const bytes = new TextEncoder().encode(json);
-            let binary = '';
-            bytes.forEach(b => binary += String.fromCharCode(b));
-            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        }
-
-        function decodePayload(str) {
-            try {
-                let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-                while (base64.length % 4) base64 += '=';
-                const binary = atob(base64);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                const json = new TextDecoder().decode(bytes);
-                return JSON.parse(json);
-            } catch (e) {
-                return null;
-            }
         }
 
         function shuffleArray(arr) {
@@ -296,14 +298,8 @@
                 remainingIds: selectedPool
             };
 
-            updatePoolUrlHash();
+            savePool();
             openPoolScreen();
-        }
-
-        function updatePoolUrlHash() {
-            if (!poolState) return;
-            const payload = { rem: poolState.remainingIds };
-            history.replaceState(null, '', `#p=${encodePayload(payload)}`);
         }
 
         function openPoolScreen() {
@@ -311,15 +307,17 @@
             document.getElementById('pool-screen').classList.remove('hidden');
             document.getElementById('reset-home-btn').classList.remove('hidden');
 
+            const rem = poolState.remainingIds.length;
+            updateHeaderCounter(rem);
             document.getElementById('pool-total-count').textContent = FIXED_PARTICIPANTS;
-            document.getElementById('pool-remaining-count').textContent = poolState.remainingIds.length;
+            document.getElementById('pool-remaining-count').textContent = rem;
 
-            if (poolState.remainingIds.length === 0) {
+            if (rem === 0) {
                 document.getElementById('pool-ready-box').classList.add('hidden');
                 document.getElementById('pool-result-box').classList.add('hidden');
                 document.getElementById('pool-finished-box').classList.remove('hidden');
             } else {
-                const currentParticipantNum = FIXED_PARTICIPANTS - poolState.remainingIds.length + 1;
+                const currentParticipantNum = FIXED_PARTICIPANTS - rem + 1;
                 document.getElementById('pool-prompt-title').textContent = `Участник №${currentParticipantNum}, ваша очередь!`;
                 document.getElementById('pool-roulette-emoji').textContent = '🎲';
                 document.getElementById('pool-ready-box').classList.remove('hidden');
@@ -358,11 +356,14 @@
             const chosenId = poolState.remainingIds[randomIndex];
 
             poolState.remainingIds.splice(randomIndex, 1);
-            updatePoolUrlHash();
+            savePool();
+
+            const rem = poolState.remainingIds.length;
+            updateHeaderCounter(rem);
+            document.getElementById('pool-remaining-count').textContent = rem;
 
             const charObj = SHREK_CHARACTERS.find(c => c.id === chosenId);
 
-            document.getElementById('pool-remaining-count').textContent = poolState.remainingIds.length;
             document.getElementById('pool-result-emoji').textContent = charObj.emoji;
             document.getElementById('pool-result-name').textContent = charObj.name;
             document.getElementById('pool-result-desc').textContent = charObj.desc;
@@ -381,17 +382,6 @@
 
         function hidePoolResultForNext() {
             openPoolScreen();
-        }
-
-        function copyCurrentPoolUrl() {
-            navigator.clipboard.writeText(window.location.href).then(() => {
-                const btn = document.getElementById('copy-next-url-btn');
-                const original = btn.innerHTML;
-                btn.innerHTML = '<span>✓</span> Ссылка без вашей роли скопирована';
-                setTimeout(() => {
-                    btn.innerHTML = original;
-                }, 2500);
-            });
         }
 
         function launchConfetti() {
