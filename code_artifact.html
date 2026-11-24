@@ -3,63 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тайный Рандомайзер: Шрек и Китайский календарь</title>
+    <title>Тайный Рандомайзер: Герои Шрека</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            transition: background 0.5s ease, color 0.3s ease;
-        }
-
-        /* Тема Шрек */
-        body.theme-shrek {
             background: radial-gradient(circle at top left, #1e3a1e, #0f2414 55%, #09150c 100%);
             color: #ecfdf5;
         }
-        .theme-shrek .card-surface {
+        .card-surface {
             background: rgba(20, 46, 26, 0.72);
             border-color: rgba(132, 204, 22, 0.25);
         }
-        .theme-shrek .accent-btn {
+        .accent-btn {
             background: linear-gradient(135deg, #65a30d, #84cc16);
             color: #052e16;
         }
-        .theme-shrek .accent-btn:hover {
+        .accent-btn:hover {
             filter: brightness(1.08);
         }
-        .theme-shrek .accent-text {
+        .accent-text {
             color: #a3e635;
         }
-        .theme-shrek .accent-badge {
+        .accent-badge {
             background: rgba(132, 204, 22, 0.16);
             color: #bef264;
             border-color: rgba(132, 204, 22, 0.35);
-        }
-
-        /* Тема Китайский календарь */
-        body.theme-zodiac {
-            background: radial-gradient(circle at top left, #450a0a, #270707 55%, #140404 100%);
-            color: #fef2f2;
-        }
-        .theme-zodiac .card-surface {
-            background: rgba(58, 12, 12, 0.72);
-            border-color: rgba(245, 158, 11, 0.28);
-        }
-        .theme-zodiac .accent-btn {
-            background: linear-gradient(135deg, #dc2626, #f59e0b);
-            color: #ffffff;
-        }
-        .theme-zodiac .accent-btn:hover {
-            filter: brightness(1.08);
-        }
-        .theme-zodiac .accent-text {
-            color: #fbbf24;
-        }
-        .theme-zodiac .accent-badge {
-            background: rgba(245, 158, 11, 0.16);
-            color: #fde68a;
-            border-color: rgba(245, 158, 11, 0.35);
         }
 
         .glass {
@@ -92,18 +62,18 @@
         }
     </style>
 </head>
-<body class="theme-shrek min-h-screen flex flex-col justify-between selection:bg-lime-400 selection:text-black">
+<body class="min-h-screen flex flex-col justify-between selection:bg-lime-400 selection:text-black">
 
     <canvas id="confetti-canvas"></canvas>
 
     <!-- Верхняя панель -->
     <header class="w-full max-w-4xl mx-auto px-4 pt-6 pb-2 flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <div id="header-logo" class="w-10 h-10 rounded-xl flex items-center justify-center text-2xl bg-lime-500/20 border border-lime-400/30 shadow-lg">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-2xl bg-lime-500/20 border border-lime-400/30 shadow-lg">
                 🧅
             </div>
             <div>
-                <h1 class="font-extrabold text-lg sm:text-xl tracking-tight leading-none">Тайный Рандомайзер</h1>
+                <h1 class="font-extrabold text-lg sm:text-xl tracking-tight leading-none">Тайный Рандомайзер: Герои Шрека</h1>
                 <p class="text-xs opacity-70 mt-1">100% анонимно • Без повторов • Защита от спойлеров</p>
             </div>
         </div>
@@ -116,48 +86,36 @@
     <!-- Основной контейнер -->
     <main class="w-full max-w-3xl mx-auto px-4 py-6 flex-grow flex flex-col justify-center">
 
-        <!-- ЭКРАН 1: НАСТРОЙКА ЖЕРЕБЬЁВКИ -->
+        <!-- ЭКРАН 1: СТАРТ ЖЕРЕБЬЁВКИ -->
         <section id="setup-screen" class="card-surface glass border rounded-3xl p-6 sm:p-8 shadow-2xl">
             <div class="text-center mb-7">
                 <span class="accent-badge inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border mb-3">
-                    Настройка жеребьёвки
+                    Вселенная Шрека
                 </span>
-                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Выберите вселенную</h2>
+                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Анонимная жеребьёвка персонажей</h2>
                 <p class="text-sm opacity-75 mt-2 max-w-lg mx-auto">
                     Имена участников не запрашиваются. Каждый персонаж выпадает строго один раз и навсегда исключается из общего пула.
                 </p>
             </div>
 
-            <!-- Выбор вселенной -->
-            <div class="mb-6">
-                <label class="block text-xs font-bold uppercase tracking-wider opacity-70 mb-3">1. Тематика персонажей</label>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button type="button" id="btn-theme-shrek" onclick="selectTheme('shrek')"
-                        class="text-left p-4 rounded-2xl border-2 border-lime-400 bg-lime-400/10 transition relative group">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-3xl">👹</span>
-                            <span id="check-shrek" class="w-6 h-6 rounded-full bg-lime-400 text-black flex items-center justify-center text-xs font-bold">✓</span>
-                        </div>
+            <!-- Карточка вселенной -->
+            <div class="mb-6 p-5 rounded-2xl border-2 border-lime-400/60 bg-lime-400/10">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="text-3xl">👹</span>
+                    <div>
                         <div class="font-bold text-lg">Герои Шрека</div>
-                        <div class="text-xs opacity-75 mt-1">14 культовых персонажей: Шрек, Осёл, Фиона, Кот в сапогах, Лорд Фаркуад, Дракониха, Пряня и другие.</div>
-                    </button>
-
-                    <button type="button" id="btn-theme-zodiac" onclick="selectTheme('zodiac')"
-                        class="text-left p-4 rounded-2xl border-2 border-white/10 bg-white/5 hover:bg-white/10 transition relative group">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-3xl">🐉</span>
-                            <span id="check-zodiac" class="hidden w-6 h-6 rounded-full bg-amber-400 text-black flex items-center justify-center text-xs font-bold">✓</span>
-                        </div>
-                        <div class="font-bold text-lg">Китайский календарь</div>
-                        <div class="text-xs opacity-75 mt-1">12 священных животных восточного цикла: Крыса, Бык, Тигр, Кролик, Дракон, Змея, Лошадь и др.</div>
-                    </button>
+                        <div class="text-xs accent-text font-semibold">14 культовых персонажей в базе</div>
+                    </div>
                 </div>
+                <p class="text-xs opacity-80 leading-relaxed mt-2">
+                    В розыгрыше участвуют 9 случайных героев из списка: Шрек, Осёл, Принцесса Фиона, Кот в сапогах, Лорд Фаркуад, Дракониха, Пряня, Пиноккио, Фея-Крёстная, Принц Чаминг, Серый Волк, Три слепых мышонка, Румпельштильцхен и Король Гарольд.
+                </p>
             </div>
 
             <!-- Фиксированное количество участников: 9 -->
             <div class="mb-7 bg-black/20 rounded-2xl p-4 border border-white/10 flex items-center justify-between">
                 <div>
-                    <div class="font-semibold text-sm">2. Количество участников</div>
+                    <div class="font-semibold text-sm">Количество участников</div>
                     <div class="text-xs opacity-70 mt-0.5">Фиксированный пул без повторений</div>
                 </div>
                 <div class="px-4 py-2 rounded-xl bg-white/10 border border-white/15 font-extrabold text-base accent-text">
@@ -175,7 +133,7 @@
         <section id="pool-screen" class="hidden card-surface glass border rounded-3xl p-6 sm:p-8 shadow-2xl text-center">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-5 mb-6 border-b border-white/10">
                 <div class="flex items-center gap-2">
-                    <span id="pool-theme-badge" class="accent-badge text-xs font-bold px-3 py-1 rounded-full border">Герои Шрека</span>
+                    <span class="accent-badge text-xs font-bold px-3 py-1 rounded-full border">🧅 Герои Шрека</span>
                     <span class="text-xs opacity-70">• Анонимный пул</span>
                 </div>
                 <div class="text-xs sm:text-sm font-semibold">
@@ -202,7 +160,7 @@
                 <div class="bg-black/30 border border-white/15 rounded-3xl p-6 sm:p-8 max-w-md mx-auto mb-6 shadow-inner">
                     <div id="pool-result-emoji" class="text-7xl sm:text-8xl mb-3">🧌</div>
                     <h3 id="pool-result-name" class="text-2xl sm:text-3xl font-extrabold accent-text mb-2">Шрек</h3>
-                    <p id="pool-result-desc" class="text-sm opacity-80 leading-relaxed">Добрый великан с болота, который ценит покой и многослойность.</p>
+                    <p id="pool-result-desc" class="text-sm opacity-80 leading-relaxed">Благородный зелёный огр с болота.</p>
                     <div class="mt-4 pt-3 border-t border-white/10 text-[11px] opacity-60">
                         ✔ Персонаж исключён из ссылки и больше никому не выпадет
                     </div>
@@ -239,114 +197,47 @@
     </footer>
 
     <script>
-        // --- БАЗА ПЕРСОНАЖЕЙ ---
-        const UNIVERSES = {
-            shrek: {
-                id: 'shrek',
-                title: 'Герои Шрека',
-                logo: '🧅',
-                characters: [
-                    { id: 0, name: 'Шрек', emoji: '🧌', desc: 'Благородный зелёный огр с болота. Снаружи суров, но внутри у него большое сердце и много слоёв.' },
-                    { id: 1, name: 'Осёл', emoji: '🫏', desc: 'Неутомимый оптимист, лучший друг Шрека и главный генератор шуток и утренних вафель.' },
-                    { id: 2, name: 'Принцесса Фиона', emoji: '👸', desc: 'Решительная принцесса, владеющая боевыми искусствами и принимающая свою истинную природу.' },
-                    { id: 3, name: 'Кот в сапогах', emoji: '🥾', desc: 'Отважный фехтовальщик с фирменным взглядом огромных беззащитных глаз.' },
-                    { id: 4, name: 'Лорд Фаркуад', emoji: '👑', desc: 'Амбициозный правитель Дюлока с грандиозными планами и невысоким ростом.' },
-                    { id: 5, name: 'Дракониха', emoji: '🐲', desc: 'Грозная огнедышащая стражница башни, оказавшаяся нежной и верной возлюбленной Осла.' },
-                    { id: 6, name: 'Пряня (Пряничный человечек)', emoji: '🍪', desc: 'Храбрый малыш из глазури, который никогда не выдаст своих друзей даже под пытками молоком.' },
-                    { id: 7, name: 'Пиноккио', emoji: '🤥', desc: 'Деревянный мальчик, мечтающий стать настоящим, чей нос мгновенно выдаёт любую неправду.' },
-                    { id: 8, name: 'Фея-Крёстная', emoji: '🪄', desc: 'Влиятельная волшебница с безупречным вокалом, бизнес-хваткой и фабрикой зелий.' },
-                    { id: 9, name: 'Принц Чаминг', emoji: '🪞', desc: 'Самовлюблённый красавчик с идеальной причёской и вишнёвым блеском для губ.' },
-                    { id: 10, name: 'Серый Волк', emoji: '🐺', desc: 'Спокойный любитель бабушкиных ночнушек и модных журналов, верный товарищ Шрека.' },
-                    { id: 11, name: 'Три слепых мышонка', emoji: '🐭', desc: 'Неразлучное музыкальное трио в тёмных очках, всегда готовое поддержать любую авантюру.' },
-                    { id: 12, name: 'Румпельштильцхен', emoji: '📜', desc: 'Хитрый мастер магических контрактов, умеющий вписать мелкий шрифт в любую сделку.' },
-                    { id: 13, name: 'Король Гарольд', emoji: '🐸', desc: 'Правитель Тридевятого царства с большой тайной из прошлого, готовый на всё ради дочери.' }
-                ]
-            },
-            zodiac: {
-                id: 'zodiac',
-                title: 'Китайский календарь',
-                logo: '🏮',
-                characters: [
-                    { id: 0, name: 'Крыса', emoji: '🐀', desc: 'Символ находчивости, острого ума, обаяния и умения находить выход из любой ситуации.' },
-                    { id: 1, name: 'Бык', emoji: '🐂', desc: 'Олицетворение надёжности, спокойной силы, трудолюбия и непоколебимой верности.' },
-                    { id: 2, name: 'Тигр', emoji: '🐅', desc: 'Прирождённый лидер с яркой харизмой, смелостью и страстью к большим приключениям.' },
-                    { id: 3, name: 'Кролик', emoji: '🐇', desc: 'Воплощение дипломатичности, тонкого вкуса, доброты и внутренней гармонии.' },
-                    { id: 4, name: 'Дракон', emoji: '🐉', desc: 'Могущественный знак удачи, грандиозной энергии, благородства и ярких побед.' },
-                    { id: 5, name: 'Змея', emoji: '🐍', desc: 'Символ глубокой мудрости, проницательной интуиции, загадочности и хладнокровия.' },
-                    { id: 6, name: 'Лошадь', emoji: '🐎', desc: 'Свободолюбивый дух, неиссякаемый драйв, искренность и стремление всегда быть впереди.' },
-                    { id: 7, name: 'Коза (Овца)', emoji: '🐐', desc: 'Творческая натура с развитой эмпатией, мягкостью и богатым воображением.' },
-                    { id: 8, name: 'Обезьяна', emoji: '🐒', desc: 'Мастер импровизации, искромётного юмора, изобретательности и лёгкости на подъём.' },
-                    { id: 9, name: 'Петух', emoji: '🐓', desc: 'Символ пунктуальности, прямоты, уверенности в себе и умения быть в центре внимания.' },
-                    { id: 10, name: 'Собака', emoji: '🐕', desc: 'Эталон честности, преданности, обострённого чувства справедливости и надёжного плеча.' },
-                    { id: 11, name: 'Свинья (Кабан)', emoji: '🐖', desc: 'Знак щедрости, душевного тепла, жизнерадостности и умения наслаждаться моментом.' }
-                ]
-            }
-        };
+        const SHREK_CHARACTERS = [
+            { id: 0, name: 'Шрек', emoji: '🧌', desc: 'Благородный зелёный огр с болота. Снаружи суров, но внутри у него большое сердце и много слоёв.' },
+            { id: 1, name: 'Осёл', emoji: '🫏', desc: 'Неутомимый оптимист, лучший друг Шрека и главный генератор шуток и утренних вафель.' },
+            { id: 2, name: 'Принцесса Фиона', emoji: '👸', desc: 'Решительная принцесса, владеющая боевыми искусствами и принимающая свою истинную природу.' },
+            { id: 3, name: 'Кот в сапогах', emoji: '🥾', desc: 'Отважный фехтовальщик с фирменным взглядом огромных беззащитных глаз.' },
+            { id: 4, name: 'Лорд Фаркуад', emoji: '👑', desc: 'Амбициозный правитель Дюлока с грандиозными планами и невысоким ростом.' },
+            { id: 5, name: 'Дракониха', emoji: '🐲', desc: 'Грозная огнедышащая стражница башни, оказавшаяся нежной и верной возлюбленной Осла.' },
+            { id: 6, name: 'Пряня (Пряничный человечек)', emoji: '🍪', desc: 'Храбрый малыш из глазури, который никогда не выдаст своих друзей даже под пытками молоком.' },
+            { id: 7, name: 'Пиноккио', emoji: '🤥', desc: 'Деревянный мальчик, мечтающий стать настоящим, чей нос мгновенно выдаёт любую неправду.' },
+            { id: 8, name: 'Фея-Крёстная', emoji: '🪄', desc: 'Влиятельная волшебница с безупречным вокалом, бизнес-хваткой и фабрикой зелий.' },
+            { id: 9, name: 'Принц Чаминг', emoji: '🪞', desc: 'Самовлюблённый красавчик с идеальной причёской и вишнёвым блеском для губ.' },
+            { id: 10, name: 'Серый Волк', emoji: '🐺', desc: 'Спокойный любитель бабушкиных ночнушек и модных журналов, верный товарищ Шрека.' },
+            { id: 11, name: 'Три слепых мышонка', emoji: '🐭', desc: 'Неразлучное музыкальное трио в тёмных очках, всегда готовое поддержать любую авантюру.' },
+            { id: 12, name: 'Румпельштильцхен', emoji: '📜', desc: 'Хитрый мастер магических контрактов, умеющий вписать мелкий шрифт в любую сделку.' },
+            { id: 13, name: 'Король Гарольд', emoji: '🐸', desc: 'Правитель Тридевятого царства с большой тайной из прошлого, готовый на всё ради дочери.' }
+        ];
 
         const FIXED_PARTICIPANTS = 9;
-        let currentTheme = 'shrek';
         let poolState = null;
         let isRolling = false;
 
-        // --- ИНИЦИАЛИЗАЦИЯ ---
-        window.addEventListener('DOMContentLoaded', () => {
-            handleUrlRouting();
-        });
-
-        window.addEventListener('hashchange', () => {
-            handleUrlRouting();
-        });
+        window.addEventListener('DOMContentLoaded', handleUrlRouting);
+        window.addEventListener('hashchange', handleUrlRouting);
 
         function handleUrlRouting() {
             const hash = window.location.hash;
 
-            // Режим общего пула (#p=...)
             if (hash.startsWith('#p=')) {
                 const encoded = hash.slice(3);
                 const parsed = decodePayload(encoded);
-                if (parsed && UNIVERSES[parsed.u] && Array.isArray(parsed.rem)) {
+                if (parsed && Array.isArray(parsed.rem)) {
                     poolState = {
-                        universe: parsed.u,
                         total: FIXED_PARTICIPANTS,
                         remainingIds: parsed.rem
                     };
-                    applyTheme(poolState.universe);
                     openPoolScreen();
                     return;
                 }
             }
 
-            // По умолчанию стартовый экран
             showSetupScreen();
-        }
-
-        // --- УПРАВЛЕНИЕ ТЕМОЙ И НАСТРОЙКАМИ ---
-        function selectTheme(themeKey) {
-            currentTheme = themeKey;
-            applyTheme(themeKey);
-
-            const btnShrek = document.getElementById('btn-theme-shrek');
-            const btnZodiac = document.getElementById('btn-theme-zodiac');
-            const checkShrek = document.getElementById('check-shrek');
-            const checkZodiac = document.getElementById('check-zodiac');
-
-            if (themeKey === 'shrek') {
-                btnShrek.className = 'text-left p-4 rounded-2xl border-2 border-lime-400 bg-lime-400/10 transition relative group';
-                btnZodiac.className = 'text-left p-4 rounded-2xl border-2 border-white/10 bg-white/5 hover:bg-white/10 transition relative group';
-                checkShrek.classList.remove('hidden');
-                checkZodiac.classList.add('hidden');
-            } else {
-                btnZodiac.className = 'text-left p-4 rounded-2xl border-2 border-amber-400 bg-amber-400/10 transition relative group';
-                btnShrek.className = 'text-left p-4 rounded-2xl border-2 border-white/10 bg-white/5 hover:bg-white/10 transition relative group';
-                checkZodiac.classList.remove('hidden');
-                checkShrek.classList.add('hidden');
-            }
-        }
-
-        function applyTheme(themeKey) {
-            document.body.classList.remove('theme-shrek', 'theme-zodiac');
-            document.body.classList.add(`theme-${themeKey}`);
-            document.getElementById('header-logo').textContent = UNIVERSES[themeKey].logo;
         }
 
         function hideAllScreens() {
@@ -366,7 +257,6 @@
             showSetupScreen();
         }
 
-        // --- КОДИРОВАНИЕ СОСТОЯНИЯ В URL ---
         function encodePayload(obj) {
             const json = JSON.stringify(obj);
             const bytes = new TextEncoder().encode(json);
@@ -398,13 +288,10 @@
             return copy;
         }
 
-        // --- ЛОГИКА ОБЩЕГО ПУЛА ---
         function startPoolDraw() {
-            const allChars = UNIVERSES[currentTheme].characters;
-            const selectedPool = shuffleArray(allChars).slice(0, FIXED_PARTICIPANTS).map(c => c.id);
+            const selectedPool = shuffleArray(SHREK_CHARACTERS).slice(0, FIXED_PARTICIPANTS).map(c => c.id);
 
             poolState = {
-                universe: currentTheme,
                 total: FIXED_PARTICIPANTS,
                 remainingIds: selectedPool
             };
@@ -415,12 +302,8 @@
 
         function updatePoolUrlHash() {
             if (!poolState) return;
-            const payload = {
-                u: poolState.universe,
-                rem: poolState.remainingIds
-            };
-            const hash = `#p=${encodePayload(payload)}`;
-            history.replaceState(null, '', hash);
+            const payload = { rem: poolState.remainingIds };
+            history.replaceState(null, '', `#p=${encodePayload(payload)}`);
         }
 
         function openPoolScreen() {
@@ -428,8 +311,6 @@
             document.getElementById('pool-screen').classList.remove('hidden');
             document.getElementById('reset-home-btn').classList.remove('hidden');
 
-            const universe = UNIVERSES[poolState.universe];
-            document.getElementById('pool-theme-badge').textContent = `${universe.logo} ${universe.title}`;
             document.getElementById('pool-total-count').textContent = FIXED_PARTICIPANTS;
             document.getElementById('pool-remaining-count').textContent = poolState.remainingIds.length;
 
@@ -457,12 +338,11 @@
             btn.classList.add('opacity-60', 'cursor-not-allowed');
             rouletteEmoji.classList.add('animate-spin-emoji');
 
-            const universe = UNIVERSES[poolState.universe];
             let ticks = 0;
             const maxTicks = 16;
 
             const interval = setInterval(() => {
-                const randomPreview = universe.characters[Math.floor(Math.random() * universe.characters.length)];
+                const randomPreview = SHREK_CHARACTERS[Math.floor(Math.random() * SHREK_CHARACTERS.length)];
                 rouletteEmoji.textContent = randomPreview.emoji;
                 ticks++;
 
@@ -477,12 +357,10 @@
             const randomIndex = Math.floor(Math.random() * poolState.remainingIds.length);
             const chosenId = poolState.remainingIds[randomIndex];
 
-            // Навсегда исключаем выпавшего персонажа из пула
             poolState.remainingIds.splice(randomIndex, 1);
             updatePoolUrlHash();
 
-            const universe = UNIVERSES[poolState.universe];
-            const charObj = universe.characters.find(c => c.id === chosenId);
+            const charObj = SHREK_CHARACTERS.find(c => c.id === chosenId);
 
             document.getElementById('pool-remaining-count').textContent = poolState.remainingIds.length;
             document.getElementById('pool-result-emoji').textContent = charObj.emoji;
@@ -506,8 +384,7 @@
         }
 
         function copyCurrentPoolUrl() {
-            const url = window.location.href;
-            navigator.clipboard.writeText(url).then(() => {
+            navigator.clipboard.writeText(window.location.href).then(() => {
                 const btn = document.getElementById('copy-next-url-btn');
                 const original = btn.innerHTML;
                 btn.innerHTML = '<span>✓</span> Ссылка без вашей роли скопирована';
@@ -517,16 +394,13 @@
             });
         }
 
-        // --- АНИМАЦИЯ КОНФЕТТИ ---
         function launchConfetti() {
             const canvas = document.getElementById('confetti-canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
 
-            const colors = currentTheme === 'shrek'
-                ? ['#84cc16', '#bef264', '#22c55e', '#facc15', '#ffffff']
-                : ['#ef4444', '#f59e0b', '#fbbf24', '#fca5a5', '#ffffff'];
+            const colors = ['#84cc16', '#bef264', '#22c55e', '#facc15', '#ffffff'];
 
             const pieces = Array.from({ length: 75 }, () => ({
                 x: canvas.width / 2 + (Math.random() - 0.5) * 180,
