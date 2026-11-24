@@ -187,7 +187,7 @@
             <div id="pool-result-box" class="hidden py-2 animate-pop">
                 <div class="text-xs uppercase tracking-widest opacity-65 font-bold mb-2">Ваш тайный персонаж</div>
                 <div class="bg-black/30 border border-white/15 rounded-3xl p-6 sm:p-8 max-w-md mx-auto mb-6 shadow-inner">
-                    <div id="pool-result-emoji" class="text-7xl sm:text-8xl mb-3">🧌</div>
+                    <div id="pool-result-emoji" class="text-7xl sm:text-8xl mb-3">👹</div>
                     <h3 id="pool-result-name" class="text-2xl sm:text-3xl font-extrabold accent-text mb-2">Шрек</h3>
                     <p id="pool-result-desc" class="text-sm opacity-80 leading-relaxed">Благородный зелёный огр с болота.</p>
                     <div class="mt-4 pt-3 border-t border-white/10 text-[11px] opacity-60">
@@ -229,8 +229,8 @@
         const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
         const SHREK_CHARACTERS = [
-            { id: 0, name: 'Шрек', emoji: '🧌', desc: 'Благородный зелёный огр с болота. Снаружи суров, но внутри у него большое сердце и много слоёв.' },
-            { id: 1, name: 'Осёл', emoji: '🫏', desc: 'Неутомимый оптимист, лучший друг Шрека и главный генератор шуток и утренних вафель.' },
+            { id: 0, name: 'Шрек', emoji: '👹', desc: 'Благородный зелёный огр с болота. Снаружи суров, но внутри у него большое сердце и много слоёв.' },
+            { id: 1, name: 'Осёл', emoji: '🐴', desc: 'Неутомимый оптимист, лучший друг Шрека и главный генератор шуток и утренних вафель.' },
             { id: 2, name: 'Принцесса Фиона', emoji: '👸', desc: 'Решительная принцесса, владеющая боевыми искусствами и принимающая свою истинную природу.' },
             { id: 3, name: 'Кот в сапогах', emoji: '🥾', desc: 'Отважный фехтовальщик с фирменным взглядом огромных беззащитных глаз.' },
             { id: 4, name: 'Лорд Фаркуад', emoji: '👑', desc: 'Амбициозный правитель Дюлока с грандиозными планами и невысоким ростом.' },
@@ -470,7 +470,6 @@
             }, 65);
 
             try {
-                // Если данные обновлялись меньше 2 секунд назад, используем их сразу без лишнего GET-запроса
                 let latest = poolState;
                 if (!latest || Date.now() - lastSyncTimestamp > 2000) {
                     latest = await fetchCloudRecord();
@@ -484,7 +483,6 @@
                     return;
                 }
 
-                // Выбираем случайного героя и сразу записываем обновлённый остаток в облако
                 const updatedIds = [...latest.remainingIds];
                 const randomIndex = Math.floor(Math.random() * updatedIds.length);
                 const chosenId = updatedIds[randomIndex];
@@ -540,7 +538,6 @@
         function hidePoolResultForNext() {
             isShowingResult = false;
             openPoolScreen();
-            // Фоновая проверка актуального остатка без блокировки интерфейса
             syncFromCloud(false);
         }
 
