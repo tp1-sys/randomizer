@@ -74,7 +74,7 @@
             </div>
             <div>
                 <h1 class="font-extrabold text-lg sm:text-xl tracking-tight leading-none">Тайный Рандомайзер: Герои Шрека</h1>
-                <p class="text-xs opacity-70 mt-1">100% анонимно • Без повторов • На одном устройстве</p>
+                <p class="text-xs opacity-70 mt-1">100% анонимно • Без повторов • Общий онлайн-пул</p>
             </div>
         </div>
 
@@ -82,11 +82,15 @@
             <!-- Счётчик оставшихся мест в самом начале страницы -->
             <div class="accent-badge px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow">
                 <span>🎟️</span>
-                <span>Осталось мест: <span id="header-remaining-count" class="text-white font-extrabold">9</span> из 9</span>
+                <span>Осталось мест: <span id="header-remaining-count" class="text-white font-extrabold">...</span> из 9</span>
             </div>
 
-            <button id="reset-home-btn" onclick="resetToSetup()" class="hidden text-xs sm:text-sm px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition flex items-center gap-1.5 font-medium">
-                <span>↺</span> Сбросить
+            <button id="refresh-sync-btn" onclick="syncFromCloud(true)" title="Обновить остаток мест" class="text-xs sm:text-sm px-3 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition flex items-center gap-1 font-medium">
+                <span id="sync-icon">🔄</span>
+            </button>
+
+            <button id="reset-home-btn" onclick="confirmResetCloudPool()" class="hidden text-xs sm:text-sm px-3.5 py-2 rounded-xl border border-red-400/30 bg-red-500/10 hover:bg-red-500/20 text-red-200 transition flex items-center gap-1.5 font-medium">
+                <span>↺</span> Сбросить пул
             </button>
         </div>
     </header>
@@ -94,15 +98,32 @@
     <!-- Основной контейнер -->
     <main class="w-full max-w-3xl mx-auto px-4 py-6 flex-grow flex flex-col justify-center">
 
-        <!-- ЭКРАН 1: СТАРТ ЖЕРЕБЬЁВКИ -->
-        <section id="setup-screen" class="card-surface glass border rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <!-- ЭКРАН ЗАГРУЗКИ -->
+        <section id="loading-screen" class="card-surface glass border rounded-3xl p-10 shadow-2xl text-center">
+            <div class="text-5xl mb-4 animate-bounce">🧅</div>
+            <h2 class="text-xl font-bold">Синхронизация общего пула...</h2>
+            <p class="text-xs opacity-70 mt-2">Проверяем актуальное количество свободных мест</p>
+        </section>
+
+        <!-- ЭКРАН ОШИБКИ СЕТИ -->
+        <section id="error-screen" class="hidden card-surface glass border border-red-400/40 rounded-3xl p-8 shadow-2xl text-center">
+            <div class="text-5xl mb-3">⚠️</div>
+            <h2 class="text-xl font-bold text-red-200">Не удалось подключиться к облачному пулу</h2>
+            <p id="error-message-text" class="text-xs opacity-80 mt-2 max-w-md mx-auto">Проверьте интернет-соединение или настройки ключа JSONBin.</p>
+            <button onclick="syncFromCloud(true)" class="accent-btn mt-6 px-6 py-3 rounded-xl font-bold text-sm">
+                Повторить попытку
+            </button>
+        </section>
+
+        <!-- ЭКРАН 1: СТАРТ ЖЕРЕБЬЁВКИ (если пул ещё не запущен) -->
+        <section id="setup-screen" class="hidden card-surface glass border rounded-3xl p-6 sm:p-8 shadow-2xl">
             <div class="text-center mb-7">
                 <span class="accent-badge inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border mb-3">
                     Вселенная Шрека • Свободно 9 из 9 мест
                 </span>
                 <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Анонимная жеребьёвка персонажей</h2>
                 <p class="text-sm opacity-75 mt-2 max-w-lg mx-auto">
-                    Имена участников не запрашиваются. Передавайте устройство по очереди — каждый персонаж выпадает строго один раз и навсегда исключается.
+                    Имена участников не запрашиваются. Переходить по ссылке можно с любого компьютера или телефона — каждый персонаж выпадает строго один раз и навсегда исключается для всех.
                 </p>
             </div>
 
@@ -124,7 +145,7 @@
             <div class="mb-7 bg-black/20 rounded-2xl p-4 border border-white/10 flex items-center justify-between">
                 <div>
                     <div class="font-semibold text-sm">Количество мест в розыгрыше</div>
-                    <div class="text-xs opacity-70 mt-0.5">Фиксированный пул на 9 участников без повторений</div>
+                    <div class="text-xs opacity-70 mt-0.5">Единый онлайн-пул на 9 участников без повторений</div>
                 </div>
                 <div class="px-4 py-2 rounded-xl bg-white/10 border border-white/15 font-extrabold text-base accent-text">
                     9 мест
@@ -132,17 +153,17 @@
             </div>
 
             <!-- Кнопка запуска -->
-            <button onclick="startPoolDraw()" class="accent-btn w-full py-4 rounded-2xl font-extrabold text-base sm:text-lg shadow-xl transition transform active:scale-[0.99] flex items-center justify-center gap-2">
-                <span>✨</span> Начать жеребьёвку (9 мест)
+            <button id="start-pool-btn" onclick="startPoolDraw()" class="accent-btn w-full py-4 rounded-2xl font-extrabold text-base sm:text-lg shadow-xl transition transform active:scale-[0.99] flex items-center justify-center gap-2">
+                <span>✨</span> Запустить общий пул (9 мест)
             </button>
         </section>
 
-        <!-- ЭКРАН 2: ОБЩИЙ ПУЛ НА ОДНОМ УСТРОЙСТВЕ -->
+        <!-- ЭКРАН 2: ОБЩИЙ ОБЛАЧНЫЙ ПУЛ -->
         <section id="pool-screen" class="hidden card-surface glass border rounded-3xl p-6 sm:p-8 shadow-2xl text-center">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-5 mb-6 border-b border-white/10">
                 <div class="flex items-center gap-2">
                     <span class="accent-badge text-xs font-bold px-3 py-1 rounded-full border">🧅 Герои Шрека</span>
-                    <span class="text-xs opacity-70">• Анонимный пул</span>
+                    <span class="text-xs opacity-70">• Единый пул для всех ПК</span>
                 </div>
                 <div class="text-xs sm:text-sm font-semibold">
                     Осталось мест: <span id="pool-remaining-count" class="accent-text font-extrabold text-base">9</span> из <span id="pool-total-count">9</span>
@@ -154,7 +175,7 @@
                 <div id="pool-roulette-emoji" class="text-7xl sm:text-8xl mb-4 select-none">🎲</div>
                 <h2 id="pool-prompt-title" class="text-2xl sm:text-3xl font-extrabold mb-2">Участник №1, ваша очередь!</h2>
                 <p class="text-sm opacity-75 max-w-md mx-auto mb-7">
-                    Убедитесь, что никто не подглядывает в экран. После нажатия персонаж закрепится за вами и навсегда исчезнет из списка.
+                    Убедитесь, что никто не подглядывает в экран. После нажатия персонаж закрепится за вами и мгновенно исчезнет для всех остальных участников.
                 </p>
 
                 <button id="pool-draw-btn" onclick="drawFromPool()" class="accent-btn px-8 py-4 rounded-2xl font-extrabold text-lg shadow-xl transition transform active:scale-95 inline-flex items-center gap-2.5">
@@ -170,13 +191,13 @@
                     <h3 id="pool-result-name" class="text-2xl sm:text-3xl font-extrabold accent-text mb-2">Шрек</h3>
                     <p id="pool-result-desc" class="text-sm opacity-80 leading-relaxed">Благородный зелёный огр с болота.</p>
                     <div class="mt-4 pt-3 border-t border-white/10 text-[11px] opacity-60">
-                        ✔ Персонаж исключён и больше никому не выпадет
+                        ✔ Персонаж исключён из общего пула и больше никому не выпадет
                     </div>
                 </div>
 
                 <div class="flex justify-center">
                     <button onclick="hidePoolResultForNext()" class="accent-btn w-full sm:w-auto px-8 py-4 rounded-xl font-extrabold text-base shadow-lg transition flex items-center justify-center gap-2">
-                        <span>👁️</span> Скрыть и передать следующему
+                        <span>👁️</span> Скрыть результат от чужих глаз
                     </button>
                 </div>
             </div>
@@ -188,8 +209,8 @@
                 <p class="text-sm opacity-75 max-w-md mx-auto mb-6">
                     Все персонажи разобраны без единого повторения, а результаты сохранились в полной тайне.
                 </p>
-                <button onclick="resetToSetup()" class="accent-btn px-7 py-3.5 rounded-xl font-bold text-sm shadow-lg">
-                    Начать новый розыгрыш
+                <button onclick="confirmResetCloudPool()" class="accent-btn px-7 py-3.5 rounded-xl font-bold text-sm shadow-lg">
+                    Начать новый розыгрыш (сбросить на 9 мест)
                 </button>
             </div>
         </section>
@@ -198,10 +219,15 @@
 
     <!-- Подвал -->
     <footer class="w-full max-w-4xl mx-auto px-4 py-5 text-center text-xs opacity-55">
-        Данные не отправляются на сервер и нигде не хранятся с именами • Прогресс сохраняется локально в браузере
+        Данные не отправляются с именами • Синхронизация свободных мест работает в реальном времени для всех устройств
     </footer>
 
     <script>
+        // --- НАСТРОЙКИ JSONBIN.IO ---
+        const JSONBIN_BIN_ID = '6b056bd6ac6210605aa03e3b';
+        const JSONBIN_MASTER_KEY = '$2a$10$XJG/2HQURY42WJjFYR0RIulQwgZ6HKoM0tGi83qY6PjRQTIe/Uok2';
+        const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
         const SHREK_CHARACTERS = [
             { id: 0, name: 'Шрек', emoji: '🧌', desc: 'Благородный зелёный огр с болота. Снаружи суров, но внутри у него большое сердце и много слоёв.' },
             { id: 1, name: 'Осёл', emoji: '🫏', desc: 'Неутомимый оптимист, лучший друг Шрека и главный генератор шуток и утренних вафель.' },
@@ -221,49 +247,98 @@
         ];
 
         const FIXED_PARTICIPANTS = 9;
-        const STORAGE_KEY = 'shrek_randomizer_pool_v1';
-        let poolState = null;
+        let poolState = null; // { active: boolean, remainingIds: number[] }
         let isRolling = false;
+        let isShowingResult = false;
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Очищаем возможные старые хэши из URL, чтобы ссылка оставалась чистой
             if (window.location.hash) {
                 history.replaceState(null, '', window.location.pathname + window.location.search);
             }
+            syncFromCloud(true);
 
-            const saved = loadSavedPool();
-            if (saved) {
-                poolState = saved;
-                openPoolScreen();
-            } else {
-                updateHeaderCounter(FIXED_PARTICIPANTS);
-                showSetupScreen();
-            }
+            // Автообновление остатка каждые 8 секунд, если пользователь не смотрит свой результат
+            setInterval(() => {
+                if (!isRolling && !isShowingResult) {
+                    syncFromCloud(false);
+                }
+            }, 8000);
         });
+
+        async function fetchCloudRecord() {
+            const response = await fetch(`${JSONBIN_URL}/latest`, {
+                method: 'GET',
+                headers: {
+                    'X-Master-Key': JSONBIN_MASTER_KEY,
+                    'X-Bin-Meta': 'false'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return await response.json();
+        }
+
+        async function updateCloudRecord(data) {
+            const response = await fetch(JSONBIN_URL, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_MASTER_KEY
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return await response.json();
+        }
+
+        async function syncFromCloud(showLoader = false) {
+            const syncIcon = document.getElementById('sync-icon');
+            if (syncIcon) syncIcon.classList.add('animate-spin');
+
+            if (showLoader && !poolState) {
+                hideAllScreens();
+                document.getElementById('loading-screen').classList.remove('hidden');
+            }
+
+            try {
+                const record = await fetchCloudRecord();
+
+                if (record && record.active === true && Array.isArray(record.remainingIds)) {
+                    poolState = {
+                        active: true,
+                        remainingIds: record.remainingIds
+                    };
+                    if (!isShowingResult) {
+                        openPoolScreen();
+                    } else {
+                        updateHeaderCounter(poolState.remainingIds.length);
+                    }
+                } else {
+                    poolState = { active: false, remainingIds: [] };
+                    isShowingResult = false;
+                    showSetupScreen();
+                }
+            } catch (err) {
+                if (showLoader) {
+                    hideAllScreens();
+                    document.getElementById('error-screen').classList.remove('hidden');
+                    document.getElementById('error-message-text').textContent = `Ошибка связи с сервером (${err.message}). Проверьте подключение к сети.`;
+                }
+            } finally {
+                if (syncIcon) syncIcon.classList.remove('animate-spin');
+            }
+        }
 
         function updateHeaderCounter(remaining) {
             document.getElementById('header-remaining-count').textContent = remaining;
         }
 
-        function savePool() {
-            if (poolState) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(poolState));
-            }
-        }
-
-        function loadSavedPool() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (!raw) return null;
-                const parsed = JSON.parse(raw);
-                if (parsed && Array.isArray(parsed.remainingIds)) {
-                    return parsed;
-                }
-            } catch (e) {}
-            return null;
-        }
-
         function hideAllScreens() {
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('error-screen').classList.add('hidden');
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('pool-screen').classList.add('hidden');
         }
@@ -275,10 +350,22 @@
             updateHeaderCounter(FIXED_PARTICIPANTS);
         }
 
-        function resetToSetup() {
-            localStorage.removeItem(STORAGE_KEY);
-            poolState = null;
-            showSetupScreen();
+        async function confirmResetCloudPool() {
+            if (!confirm('Сбросить текущий розыгрыш для всех участников и снова открыть 9 мест?')) return;
+
+            hideAllScreens();
+            document.getElementById('loading-screen').classList.remove('hidden');
+
+            try {
+                const emptyState = { active: false, remainingIds: [] };
+                await updateCloudRecord(emptyState);
+                poolState = emptyState;
+                isShowingResult = false;
+                showSetupScreen();
+            } catch (err) {
+                alert('Не удалось сбросить пул: ' + err.message);
+                openPoolScreen();
+            }
         }
 
         function shuffleArray(arr) {
@@ -290,16 +377,35 @@
             return copy;
         }
 
-        function startPoolDraw() {
-            const selectedPool = shuffleArray(SHREK_CHARACTERS).slice(0, FIXED_PARTICIPANTS).map(c => c.id);
+        async function startPoolDraw() {
+            const btn = document.getElementById('start-pool-btn');
+            btn.disabled = true;
+            btn.classList.add('opacity-60');
 
-            poolState = {
-                total: FIXED_PARTICIPANTS,
-                remainingIds: selectedPool
-            };
+            try {
+                // Проверяем перед стартом, не запустил ли кто-то пул секунду назад с другого ПК
+                const current = await fetchCloudRecord();
+                if (current && current.active === true && Array.isArray(current.remainingIds)) {
+                    poolState = current;
+                    openPoolScreen();
+                    return;
+                }
 
-            savePool();
-            openPoolScreen();
+                const selectedPool = shuffleArray(SHREK_CHARACTERS).slice(0, FIXED_PARTICIPANTS).map(c => c.id);
+                const newState = {
+                    active: true,
+                    remainingIds: selectedPool
+                };
+
+                await updateCloudRecord(newState);
+                poolState = newState;
+                openPoolScreen();
+            } catch (err) {
+                alert('Ошибка при запуске пула: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-60');
+            }
         }
 
         function openPoolScreen() {
@@ -326,8 +432,8 @@
             }
         }
 
-        function drawFromPool() {
-            if (isRolling || !poolState || poolState.remainingIds.length === 0) return;
+        async function drawFromPool() {
+            if (isRolling) return;
             isRolling = true;
 
             const btn = document.getElementById('pool-draw-btn');
@@ -336,28 +442,58 @@
             btn.classList.add('opacity-60', 'cursor-not-allowed');
             rouletteEmoji.classList.add('animate-spin-emoji');
 
-            let ticks = 0;
-            const maxTicks = 16;
-
             const interval = setInterval(() => {
                 const randomPreview = SHREK_CHARACTERS[Math.floor(Math.random() * SHREK_CHARACTERS.length)];
                 rouletteEmoji.textContent = randomPreview.emoji;
-                ticks++;
-
-                if (ticks >= maxTicks) {
-                    clearInterval(interval);
-                    finalizePoolDraw();
-                }
             }, 75);
+
+            try {
+                // 1. Загружаем самый свежий список из облака, чтобы исключить пересечение с другим ПК
+                const latest = await fetchCloudRecord();
+
+                if (!latest || !latest.active || !Array.isArray(latest.remainingIds) || latest.remainingIds.length === 0) {
+                    clearInterval(interval);
+                    rouletteEmoji.classList.remove('animate-spin-emoji');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-60', 'cursor-not-allowed');
+                    isRolling = false;
+                    poolState = { active: true, remainingIds: [] };
+                    openPoolScreen();
+                    return;
+                }
+
+                // 2. Выбираем случайного из актуальных оставшихся и сразу сохраняем обновлённый пул в облако
+                const updatedIds = [...latest.remainingIds];
+                const randomIndex = Math.floor(Math.random() * updatedIds.length);
+                const chosenId = updatedIds[randomIndex];
+                updatedIds.splice(randomIndex, 1);
+
+                const newState = {
+                    active: true,
+                    remainingIds: updatedIds
+                };
+
+                await updateCloudRecord(newState);
+                poolState = newState;
+
+                // Небольшая пауза для плавности анимации рулетки
+                setTimeout(() => {
+                    clearInterval(interval);
+                    showDrawnCharacter(chosenId, btn, rouletteEmoji);
+                }, 600);
+
+            } catch (err) {
+                clearInterval(interval);
+                rouletteEmoji.classList.remove('animate-spin-emoji');
+                rouletteEmoji.textContent = '🎲';
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'cursor-not-allowed');
+                isRolling = false;
+                alert('Ошибка синхронизации при выборе героя. Попробуйте ещё раз.');
+            }
         }
 
-        function finalizePoolDraw() {
-            const randomIndex = Math.floor(Math.random() * poolState.remainingIds.length);
-            const chosenId = poolState.remainingIds[randomIndex];
-
-            poolState.remainingIds.splice(randomIndex, 1);
-            savePool();
-
+        function showDrawnCharacter(chosenId, btn, rouletteEmoji) {
             const rem = poolState.remainingIds.length;
             updateHeaderCounter(rem);
             document.getElementById('pool-remaining-count').textContent = rem;
@@ -368,19 +504,21 @@
             document.getElementById('pool-result-name').textContent = charObj.name;
             document.getElementById('pool-result-desc').textContent = charObj.desc;
 
-            const btn = document.getElementById('pool-draw-btn');
             btn.disabled = false;
             btn.classList.remove('opacity-60', 'cursor-not-allowed');
-            document.getElementById('pool-roulette-emoji').classList.remove('animate-spin-emoji');
+            rouletteEmoji.classList.remove('animate-spin-emoji');
 
             document.getElementById('pool-ready-box').classList.add('hidden');
             document.getElementById('pool-result-box').classList.remove('hidden');
 
             isRolling = false;
+            isShowingResult = true;
             launchConfetti();
         }
 
         function hidePoolResultForNext() {
+            isShowingResult = false;
+            syncFromCloud(false);
             openPoolScreen();
         }
 
