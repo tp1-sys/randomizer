@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анонимный Рандомайзер: Шрек и Китайский календарь</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background 0.5s ease, color 0.3s ease;
+        }
+
+        /* Динамические темы */
+        body.theme-shrek {
+            background: radial-gradient(circle at top left, #1e3a1e, #0f2414 55%, #09150c 100%);
+            color: #ecfdf5;
+        }
+
+        body.theme-zodiac {
+            background: radial-gradient(circle at top left, #450a0a, #270707 55%, #160404 100%);
+            color: #fef2f2;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .theme-shrek .accent-gradient {
+            background: linear-gradient(135deg, #65a30d 0%, #16a34a 100%);
+        }
+        .theme-shrek .accent-gradient:hover {
+            background: linear-gradient(135deg, #84cc16 0%, #22c55e 100%);
+        }
+        .theme-shrek .accent-border {
+            border-color: rgba(132, 204, 22, 0.45);
+        }
+        .theme-shrek .accent-text {
+            color: #a3e635;
+        }
+
+        .theme-zodiac .accent-gradient {
+            background: linear-gradient(135deg, #dc2626 0%, #d97706 100%);
+        }
+        .theme-zodiac .accent-gradient:hover {
+            background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);
+        }
+        .theme-zodiac .accent-border {
+            border-color: rgba(245, 158, 11, 0.45);
+        }
+        .theme-zodiac .accent-text {
+            color: #fbbf24;
+        }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: floatSlow 3.5s ease-in-out infinite;
+        }
+
+        @keyframes popReveal {
+            0% { transform: scale(0.75) rotateY(90deg); opacity: 0; }
+            65% { transform: scale(1.05) rotateY(-8deg); opacity: 1; }
+            100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+        }
+        .animate-reveal {
+            animation: popReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 18px rgba(255, 255, 255, 0.12); }
+            50% { box-shadow: 0 0 32px rgba(255, 255, 255, 0.28); }
+        }
+        .glow-pulse {
+            animation: pulseGlow 2.4s infinite;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="theme-shrek min-h-screen flex flex-col justify-between selection:bg-white/20">
+
+    <!-- Канвас для анимации конфетти -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Всплывающее уведомление (Toast) -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900/95 text-white border border-white/15 shadow-2xl text-sm font-medium flex items-center gap-2.5 opacity-0 pointer-events-none transition-all duration-300 translate-y-4">
+        <span id="toast-icon">✅</span>
+        <span id="toast-text">Скопировано в буфер обмена</span>
+    </div>
+
+    <!-- Шапка приложения -->
+    <header class="w-full max-w-4xl mx-auto px-4 pt-6 pb-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div id="header-badge" class="w-11 h-11 rounded-2xl accent-gradient flex items-center justify-center text-2xl shadow-lg">
+                🧅
+            </div>
+            <div>
+                <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white">
+                    Тайный Рандомайзер
+                </h1>
+                <p class="text-xs text-white/65">
+                    100% анонимно • Без повторов • Защита от спойлеров
+                </p>
+            </div>
+        </div>
+
+        <!-- Кнопка перехода в режим организатора (если открыто по ссылке) -->
+        <div id="nav-actions" class="flex items-center gap-2">
+            <button id="btn-home" onclick="resetToOrganizer()" class="hidden px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs sm:text-sm font-medium text-white border border-white/15 transition">
+                ← Создать новую раздачу
+            </button>
+        </div>
+    </header>
+
+    <!-- Основной контейнер -->
+    <main class="w-full max-w-4xl mx-auto px-4 py-6 flex-grow flex flex-col justify-center">
+
+        <!-- ========================================================= -->
+        <!-- ЭКРАН 1: ПАНЕЛЬ ОРГАНИЗАТОРА (СОЗДАНИЕ РАЗДАЧИ)           -->
+        <!-- ========================================================= -->
+        <section id="view-organizer" class="space-y-6">
+            <div class="glass-card rounded-3xl p-6 sm:p-8">
+                <div class="text-center max-w-xl mx-auto mb-8">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-white/10 accent-text mb-3">
+                        Настройка жеребьёвки
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">
+                        Выберите вселенную и формат
+                    </h2>
+                    <p class="text-sm text-white/70">
+                        Имена участников не запрашиваются. Каждый персонаж выпадает строго один раз и исключается из дальнейшего розыгрыша.
+                    </p>
+                </div>
+
+                <!-- Шаг 1: Выбор вселенной -->
+                <div class="mb-7">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-3">
+                        1. Тематика персонажей
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button type="button" id="card-mode-shrek" onclick="selectTheme('shrek')"
+                            class="text-left p-5 rounded-2xl border-2 transition-all duration-200 bg-emerald-950/50 border-lime-400 shadow-lg relative overflow-hidden group">
+                            <div class="flex items-start justify-between mb-2">
+                                <span class="text-4xl">👹</span>
+                                <span id="check-shrek" class="w-6 h-6 rounded-full bg-lime-500 text-slate-950 flex items-center justify-center text-xs font-bold">✓</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-lime-300 transition">Герои Шрека</h3>
+                            <p class="text-xs text-white/70 mt-1 leading-relaxed">
+                                14 культовых персонажей: Шрек, Осёл, Фиона, Кот в сапогах, Лорд Фаркуад, Дракониха, Пряня и другие.
+                            </p>
+                        </button>
+
+                        <button type="button" id="card-mode-zodiac" onclick="selectTheme('zodiac')"
+                            class="text-left p-5 rounded-2xl border-2 transition-all duration-200 bg-white/5 border-white/10 hover:border-white/25 relative overflow-hidden group">
+                            <div class="flex items-start justify-between mb-2">
+                                <span class="text-4xl">🐉</span>
+                                <span id="check-zodiac" class="hidden w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-xs font-bold">✓</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-amber-300 transition">Китайский календарь</h3>
+                            <p class="text-xs text-white/70 mt-1 leading-relaxed">
+                                12 священных животных восточного цикла: Крыса, Бык, Тигр, Кролик, Дракон, Змея, Лошадь и др.
+                            </p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Шаг 2: Выбор формата розыгрыша -->
+                <div class="mb-7">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-3">
+                        2. Формат проведения и защиты от повторов
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button type="button" id="card-dist-links" onclick="selectDistribution('links')"
+                            class="text-left p-4 rounded-2xl border-2 transition-all bg-white/10 accent-border">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="font-bold text-sm text-white flex items-center gap-2">
+                                    <span>🔗</span> Индивидуальные ссылки
+                                </span>
+                                <span id="badge-dist-links" class="text-[11px] px-2 py-0.5 rounded-full bg-white/15 accent-text font-semibold">Рекомендуется</span>
+                            </div>
+                            <p class="text-xs text-white/65 leading-relaxed">
+                                Создаёт набор уникальных ссылок («Участник №1», «№2»...). Каждая ссылка открывает своего персонажа и исключается. Никто не видит чужие роли!
+                            </p>
+                        </button>
+
+                        <button type="button" id="card-dist-pool" onclick="selectDistribution('pool')"
+                            class="text-left p-4 rounded-2xl border-2 transition-all bg-white/5 border-white/10 hover:border-white/25">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="font-bold text-sm text-white flex items-center gap-2">
+                                    <span>🎰</span> Общий пул / По очереди
+                                </span>
+                                <span id="badge-dist-pool" class="hidden text-[11px] px-2 py-0.5 rounded-full bg-white/15 accent-text font-semibold">Выбрано</span>
+                            </div>
+                            <p class="text-xs text-white/65 leading-relaxed">
+                                Один экран или общая ссылка: каждый нажимает «Получить роль», видит своего персонажа, а система навсегда вычёркивает его из оставшихся.
+                            </p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Шаг 3: Количество участников -->
+                <div class="mb-8 bg-black/25 rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <label for="participant-count" class="block text-sm font-bold text-white">
+                            Количество участников
+                        </label>
+                        <p class="text-xs text-white/60">
+                            Максимум для выбранной темы: <span id="max-pool-label" class="font-semibold text-white">14</span> персонажей
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button type="button" onclick="adjustCount(-1)" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-lg transition flex items-center justify-center">−</button>
+                        <input id="participant-count" type="number" min="2" max="14" value="8" onchange="validateCount()"
+                            class="w-16 h-10 text-center rounded-xl bg-white/10 border border-white/20 text-white font-bold text-lg focus:outline-none">
+                        <button type="button" onclick="adjustCount(1)" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-lg transition flex items-center justify-center">+</button>
+                    </div>
+                </div>
+
+                <!-- Кнопка запуска -->
+                <button type="button" onclick="generateSession()"
+                    class="w-full py-4 px-6 rounded-2xl accent-gradient text-white font-extrabold text-base sm:text-lg shadow-xl transition transform active:scale-[0.99] flex items-center justify-center gap-2.5">
+                    <span>✨</span>
+                    <span id="btn-generate-text">Сгенерировать анонимные ссылки</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- ЭКРАН 2: СПИСОК АНОНИМНЫХ ССЫЛОК ДЛЯ ОРГАНИЗАТОРА         -->
+        <!-- ========================================================= -->
+        <section id="view-links-list" class="hidden space-y-5">
+            <div class="glass-card rounded-3xl p-6 sm:p-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 accent-text" id="list-theme-badge">Герои Шрека</span>
+                            <span class="text-xs text-white/50">• Роли перемешаны и зашифрованы</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-white">
+                            Анонимные ссылки готовы
+                        </h2>
+                        <p class="text-xs sm:text-sm text-white/65 mt-1">
+                            Отправьте по одной ссылке каждому человеку. Вы сами не видите, кто внутри, чтобы сохранить полную интригу!
+                        </p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="copyAllLinks()"
+                            class="px-4 py-2.5 rounded-xl accent-gradient text-white text-xs sm:text-sm font-bold shadow-lg transition flex items-center gap-2">
+                            <span>📋</span> Скопировать все ссылки
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Сетка обезличенных ссылок -->
+                <div id="links-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-6">
+                    <!-- Генерируется через JS -->
+                </div>
+
+                <div class="bg-black/25 rounded-2xl p-4 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/65">
+                    <div class="flex items-center gap-2">
+                        <span>🛡️</span>
+                        <span>При открытии ссылки на устройстве участника она автоматически блокируется от повторного просмотра другими.</span>
+                    </div>
+                    <button type="button" onclick="resetToOrganizer()" class="text-white underline hover:opacity-80 shrink-0 font-medium">
+                        Сбросить и создать заново
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- ЭКРАН 3: ПЕРСОНАЛЬНАЯ ССЫЛКА УЧАСТНИКА                    -->
+        <!-- ========================================================= -->
+        <section id="view-participant" class="hidden">
+            <div class="glass-card rounded-3xl p-6 sm:p-10 max-w-lg mx-auto text-center relative overflow-hidden">
+
+                <!-- Состояние А: Ссылка ещё не открыта (ожидание нажатия) -->
+                <div id="participant-locked" class="space-y-6 py-4">
+                    <div class="w-24 h-24 mx-auto rounded-3xl bg-white/10 border border-white/15 flex items-center justify-center text-5xl animate-float shadow-inner">
+                        🎁
+                    </div>
+                    <div>
+                        <span id="participant-slot-label" class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 accent-text mb-3">
+                            Приглашение #1
+                        </span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">
+                            Ваша тайная роль готова!
+                        </h2>
+                        <p class="text-sm text-white/70 leading-relaxed">
+                            Никто кроме вас не узнает результат. Нажмите кнопку ниже, чтобы вскрыть карточку. После открытия ссылка будет привязана и исключена.
+                        </p>
+                    </div>
+
+                    <button type="button" onclick="revealParticipantCard()"
+                        class="w-full py-4 px-6 rounded-2xl accent-gradient text-white font-extrabold text-base sm:text-lg shadow-xl glow-pulse transition transform active:scale-95">
+                        🔮 Узнать своего персонажа
+                    </button>
+                </div>
+
+                <!-- Состояние Б: Анимация барабана -->
+                <div id="participant-spinning" class="hidden space-y-6 py-8">
+                    <div id="spinner-emoji" class="text-7xl sm:text-8xl transition-transform duration-100 scale-110">
+                        🎲
+                    </div>
+                    <div class="space-y-1">
+                        <p id="spinner-name" class="text-xl font-bold text-white">Определяем судьбу...</p>
+                        <p class="text-xs text-white/60">Исключаем совпадения...</p>
+                    </div>
+                </div>
+
+                <!-- Состояние В: Карточка раскрыта -->
+                <div id="participant-revealed" class="hidden space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+                        <span>🔒</span> Только для ваших глаз • Анонимно
+                    </div>
+
+                    <!-- Контейнер с возможностью скрыть от подглядывания -->
+                    <div id="secret-card-content" class="animate-reveal bg-black/30 border border-white/15 rounded-3xl p-6 sm:p-8 space-y-4">
+                        <div id="result-emoji" class="text-7xl sm:text-8xl mx-auto drop-shadow-lg animate-float">
+                            👹
+                        </div>
+                        <div>
+                            <p id="result-subtitle" class="text-xs uppercase tracking-widest accent-text font-bold mb-1">
+                                Ваш персонаж
+                            </p>
+                            <h3 id="result-name" class="text-2xl sm:text-3xl font-extrabold text-white">
+                                Шрек
+                            </h3>
+                        </div>
+                        <p id="result-desc" class="text-sm text-white/75 leading-relaxed">
+                            Добрый великан с болота, который ценит покой, луковицы и настоящую дружбу.
+                        </p>
+                    </div>
+
+                    <!-- Заглушка при нажатии «Скрыть экран» -->
+                    <div id="secret-card-hidden" class="hidden bg-black/40 border border-white/10 rounded-3xl p-10 space-y-3">
+                        <div class="text-5xl">🙈</div>
+                        <h3 class="text-lg font-bold text-white">Результат скрыт</h3>
+                        <p class="text-xs text-white/60">Чтобы никто не подсмотрел через плечо</p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button type="button" id="btn-toggle-privacy" onclick="togglePrivacyScreen()"
+                            class="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-sm font-semibold text-white transition flex items-center justify-center gap-2">
+                            <span>👁️‍🗨️</span> <span id="toggle-privacy-text">Скрыть от чужих глаз</span>
+                        </button>
+                    </div>
+
+                    <p class="text-[11px] text-white/45">
+                        Эта ссылка уже активирована и исключена из общего списка.
+                    </p>
+                </div>
+
+                <!-- Состояние Г: Ссылка уже была использована ранее (режим строгой одноразовости при пересылке) -->
+                <div id="participant-used-warning" class="hidden space-y-5 py-4">
+                    <div class="w-20 h-20 mx-auto rounded-3xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-4xl">
+                        ⛔
+                    </div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-white mb-2">
+                            Эта ссылка уже использована
+                        </h2>
+                        <p class="text-sm text-white/70 leading-relaxed">
+                            По правилам анонимности персонаж по этой ссылке уже был получен и исключён из розыгрыша. Попросите организатора прислать свободную ссылку.
+                        </p>
+                    </div>
+                    <button type="button" onclick="forceShowUsedResult()" class="text-xs text-white/50 underline hover:text-white/80">
+                        Это моё устройство, показать мой результат снова
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- ЭКРАН 4: ОБЩИЙ ПУЛ / ПО ОЧЕРЕДИ С ИСКЛЮЧЕНИЕМ             -->
+        <!-- ========================================================= -->
+        <section id="view-pool" class="hidden">
+            <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-xl mx-auto text-center space-y-6">
+                <div class="flex items-center justify-between text-xs text-white/70 bg-black/25 px-4 py-3 rounded-2xl border border-white/10">
+                    <span id="pool-theme-name" class="font-bold accent-text">Герои Шрека</span>
+                    <span>Осталось в пуле: <strong id="pool-remaining-count" class="text-white text-sm">8</strong> из <span id="pool-total-count">8</span></span>
+                </div>
+
+                <!-- Индикатор прогресса оставшихся -->
+                <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div id="pool-progress-bar" class="h-full accent-gradient transition-all duration-500" style="width: 100%"></div>
+                </div>
+
+                <!-- Область розыгрыша -->
+                <div id="pool-stage-ready" class="py-6 space-y-5">
+                    <div class="w-24 h-24 mx-auto rounded-3xl bg-white/10 border border-white/15 flex items-center justify-center text-5xl animate-float">
+                        🎲
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white mb-2">
+                            Следующий участник
+                        </h2>
+                        <p class="text-sm text-white/70">
+                            Нажмите кнопку, чтобы вытянуть случайного свободного персонажа. Выпавший герой сразу исключается из игры.
+                        </p>
+                    </div>
+                    <button type="button" onclick="drawFromPool()"
+                        class="w-full py-4 px-6 rounded-2xl accent-gradient text-white font-extrabold text-base sm:text-lg shadow-xl transition transform active:scale-95">
+                        🎯 Вытянуть персонажа
+                    </button>
+                </div>
+
+                <!-- Анимация прокрутки в общем пуле -->
+                <div id="pool-stage-spinning" class="hidden py-10 space-y-4">
+                    <div id="pool-spinner-emoji" class="text-7xl">✨</div>
+                    <p id="pool-spinner-name" class="text-lg font-bold text-white">Перемешиваем...</p>
+                </div>
+
+                <!-- Результат текущего хода -->
+                <div id="pool-stage-result" class="hidden space-y-5">
+                    <div class="animate-reveal bg-black/30 border border-white/15 rounded-3xl p-6 space-y-3">
+                        <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-white/10 accent-text">
+                            Выпал и исключён из списка
+                        </span>
+                        <div id="pool-result-emoji" class="text-7xl mx-auto animate-float">🐉</div>
+                        <h3 id="pool-result-name" class="text-2xl sm:text-3xl font-extrabold text-white">Дракониха</h3>
+                        <p id="pool-result-desc" class="text-sm text-white/75">Описание персонажа</p>
+                    </div>
+
+                    <button type="button" onclick="hidePoolResultForNext()"
+                        class="w-full py-4 px-6 rounded-2xl bg-white/15 hover:bg-white/20 border border-white/20 text-white font-bold text-base transition">
+                        🙈 Скрыть результат и передать следующему
+                    </button>
+                </div>
+
+                <!-- Все персонажи разобраны -->
+                <div id="pool-stage-empty" class="hidden py-8 space-y-5">
+                    <div class="text-6xl">🏁</div>
+                    <div>
+                        <h3 class="text-2xl font-extrabold text-white mb-2">Все роли распределены!</h3>
+                        <p class="text-sm text-white/70">
+                            Пул пуст — каждый участник получил уникального персонажа без единого повтора.
+                        </p>
+                    </div>
+                    <button type="button" onclick="resetToOrganizer()"
+                        class="px-6 py-3 rounded-2xl accent-gradient text-white font-bold text-sm shadow-lg">
+                        Начать новую игру
+                    </button>
+                </div>
+
+                <!-- Кнопка поделиться ссылкой на текущий пул -->
+                <div class="pt-3 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
+                    <span>Хотите продолжить этот же пул на другом устройстве?</span>
+                    <button type="button" onclick="copyCurrentPoolUrl()" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-medium transition">
+                        🔗 Ссылка с текущим остатком
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Подвал -->
+    <footer class="w-full max-w-4xl mx-auto px-4 py-5 text-center text-xs text-white/40">
+        Анонимный генератор ролей • Все данные закодированы локально без сбора личной информации
+    </footer>
+
+    <script>
+        // =========================================================================
+        // БАЗА ДАННЫХ ПЕРСОНАЖЕЙ (ГЕРОИ ШРЕКА И КИТАЙСКИЙ КАЛЕНДАРЬ)
+        // =========================================================================
+        const DATASETS = {
+            shrek: {
+                title: 'Герои Шрека',
+                badge: '🧅',
+                items: [
+                    { id: 'shk_01', name: 'Шрек', emoji: '👹', desc: 'Благородный зелёный огр с болота, который ценит тишину, многослойность лука и верных друзей.' },
+                    { id: 'shk_02', name: 'Осёл', emoji: '🫏', desc: 'Неунывающий болтун с золотым сердцем, мастер утренних вафель и лучших комплиментов валунам.' },
+                    { id: 'shk_03', name: 'Принцесса Фиона', emoji: '👸', desc: 'Решительная принцесса, владеющая боевыми искусствами и принимающая свою истинную природу.' },
+                    { id: 'shk_04', name: 'Кот в сапогах', emoji: '👢', desc: 'Легендарный фехтовальщик с фирменным обезоруживающим взглядом больших невинных глаз.' },
+                    { id: 'shk_05', name: 'Лорд Фаркуад', emoji: '👑', desc: 'Амбициозный правитель Дюлока с непомерным эго и страстью к идеальному порядку.' },
+                    { id: 'shk_06', name: 'Дракониха', emoji: '🐉', desc: 'Огнедышащая стражница замка, оказавшаяся романтичной и преданной натурой.' },
+                    { id: 'shk_07', name: 'Пряня (Пряничный человечек)', emoji: '🍪', desc: 'Храбрый кондитерский герой, который никогда не сдаётся и бережёт свои мармеладные пуговки.' },
+                    { id: 'shk_08', name: 'Пиноккио', emoji: '🤥', desc: 'Деревянный мальчик, чей нос мгновенно выдаёт любую попытку схитрить.' },
+                    { id: 'shk_09', name: 'Фея-крёстная', emoji: '🪄', desc: 'Влиятельная бизнес-леди волшебного мира с эффектным вокалом и фабрикой зелий.' },
+                    { id: 'shk_10', name: 'Принц Чаминг', emoji: '💇‍♂️', desc: 'Самолюбующийся красавчик, уверенный, что весь сказочный мир вращается вокруг его причёски.' },
+                    { id: 'shk_11', name: 'Король Гарольд', emoji: '🐸', desc: 'Правитель Тридевятого королевства, готовый пойти на всё ради счастья своей дочери.' },
+                    { id: 'shk_12', name: 'Румпельштильцхен', emoji: '📜', desc: 'Хитрый мастер магических контрактов, обожающий мелкий шрифт и парики.' },
+                    { id: 'shk_13', name: 'Серый Волк', emoji: '🐺', desc: 'Любитель уютных бабушкиных ночнушек, спокойного отдыха и модных журналов.' },
+                    { id: 'shk_14', name: 'Три слепых мышонка', emoji: '🐭', desc: 'Неразлучное трио в тёмных очках, всегда готовое поддержать любую авантюру.' }
+                ]
+            },
+            zodiac: {
+                title: 'Китайский календарь',
+                badge: '🏮',
+                items: [
+                    { id: 'zod_01', name: 'Крыса', emoji: '🐀', desc: 'Первый знак цикла: сообразительность, находчивость, обаяние и умение найти выход из любой ситуации.' },
+                    { id: 'zod_02', name: 'Бык', emoji: '🐂', desc: 'Символ надёжности, упорства, спокойной силы и непоколебимой верности слову.' },
+                    { id: 'zod_03', name: 'Тигр', emoji: '🐅', desc: 'Прирождённый лидер с яркой харизмой, смелостью и страстью к приключениям.' },
+                    { id: 'zod_04', name: 'Кролик', emoji: '🐇', desc: 'Воплощение дипломатичности, тонкого вкуса, удачи и душевной гармонии.' },
+                    { id: 'zod_05', name: 'Дракон', emoji: '🐉', desc: 'Могущественный знак энергии, благородства, великих свершений и яркой индивидуальности.' },
+                    { id: 'zod_06', name: 'Змея', emoji: '🐍', desc: 'Глубокая мудрость, интуиция, загадочность и безупречное чувство момента.' },
+                    { id: 'zod_07', name: 'Лошадь', emoji: '🐎', desc: 'Неукротимая свобода, оптимизм, скорость мысли и неиссякаемый энтузиазм.' },
+                    { id: 'zod_08', name: 'Коза (Овца)', emoji: '🐐', desc: 'Творческая душа, добросердечие, артистизм и умение создавать уют вокруг себя.' },
+                    { id: 'zod_09', name: 'Обезьяна', emoji: '🐒', desc: 'Острый ум, блестящее чувство юмора, изобретательность и лёгкость на подъём.' },
+                    { id: 'zod_10', name: 'Петух', emoji: '🐓', desc: 'Прямолинейность, пунктуальность, уверенность в себе и стремление быть в центре событий.' },
+                    { id: 'zod_11', name: 'Собака', emoji: '🐕', desc: 'Эталон честности, преданности, справедливости и готовности прийти на помощь.' },
+                    { id: 'zod_12', name: 'Свинья (Кабан)', emoji: '🐖', desc: 'Щедрость, искренность, жизнелюбие и умение наслаждаться каждым моментом.' }
+                ]
+            }
+        };
+
+        // =========================================================================
+        // СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+        // =========================================================================
+        let state = {
+            theme: 'shrek',          // 'shrek' | 'zodiac'
+            distribution: 'links',   // 'links' | 'pool'
+            count: 8,
+            generatedLinks: [],      // Массив объектов для экрана списка ссылок
+            currentTicket: null,     // Расшифрованный билет участника из URL
+            isCardHidden: false,
+            poolState: null          // Состояние для режима общего пула
+        };
+
+        const STORAGE_USED_TOKENS_KEY = 'anon_randomizer_used_tokens_v1';
+        const STORAGE_POOL_PREFIX = 'anon_randomizer_pool_v1_';
+
+        // =========================================================================
+        // КРИПТО-ОБФУСКАЦИЯ И БЕЗОПАСНОЕ КОДИРОВАНИЕ В BASE64 (UTF-8)
+        // =========================================================================
+        function encodePayload(obj) {
+            const jsonStr = JSON.stringify(obj);
+            // Лёгкое XOR-маскирование с ключом, чтобы в URL нельзя было прочитать имя глазами
+            const secret = 'SHREK_ZODIAC_2026';
+            let xored = '';
+            for (let i = 0; i < jsonStr.length; i++) {
+                xored += String.fromCharCode(jsonStr.charCodeAt(i) ^ secret.charCodeAt(i % secret.length));
+            }
+            const bytes = new TextEncoder().encode(xored);
+            let binary = '';
+            bytes.forEach(b => binary += String.fromCharCode(b));
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function decodePayload(encodedStr) {
+            try {
+                let base64 = encodedStr.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) base64 += '=';
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const xored = new TextDecoder().decode(bytes);
+                const secret = 'SHREK_ZODIAC_2026';
+                let jsonStr = '';
+                for (let i = 0; i < xored.length; i++) {
+                    jsonStr += String.fromCharCode(xored.charCodeAt(i) ^ secret.charCodeAt(i % secret.length));
+                }
+                return JSON.parse(jsonStr);
+            } catch (e) {
+                console.error('Ошибка декодирования ссылки:', e);
+                return null;
+            }
+        }
+
+        // Алгоритм Фишера — Йетса для честного перемешивания без повторов
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function generateUniqueId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+        }
+
+        // =========================================================================
+        // УПРАВЛЕНИЕ ТЕМАМИ И ИНТЕРФЕЙСОМ ОРГАНИЗАТОРА
+        // =========================================================================
+        function selectTheme(themeName) {
+            state.theme = themeName;
+            document.body.className = `theme-${themeName} min-h-screen flex flex-col justify-between selection:bg-white/20`;
+
+            const badge = document.getElementById('header-badge');
+            badge.textContent = DATASETS[themeName].badge;
+
+            const cardShrek = document.getElementById('card-mode-shrek');
+            const cardZodiac = document.getElementById('card-mode-zodiac');
+            const checkShrek = document.getElementById('check-shrek');
+            const checkZodiac = document.getElementById('check-zodiac');
+
+            if (themeName === 'shrek') {
+                cardShrek.className = 'text-left p-5 rounded-2xl border-2 transition-all duration-200 bg-emerald-950/50 border-lime-400 shadow-lg relative overflow-hidden group';
+                cardZodiac.className = 'text-left p-5 rounded-2xl border-2 transition-all duration-200 bg-white/5 border-white/10 hover:border-white/25 relative overflow-hidden group';
+                checkShrek.classList.remove('hidden');
+                checkZodiac.classList.add('hidden');
+            } else {
+                cardZodiac.className = 'text-left p-5 rounded-2xl border-2 transition-all duration-200 bg-red-950/50 border-amber-400 shadow-lg relative overflow-hidden group';
+                cardShrek.className = 'text-left p-5 rounded-2xl border-2 transition-all duration-200 bg-white/5 border-white/10 hover:border-white/25 relative overflow-hidden group';
+                checkZodiac.classList.remove('hidden');
+                checkShrek.classList.add('hidden');
+            }
+
+            const maxItems = DATASETS[themeName].items.length;
+            document.getElementById('max-pool-label').textContent = maxItems;
+            const input = document.getElementById('participant-count');
+            input.max = maxItems;
+            if (parseInt(input.value, 10) > maxItems) {
+                input.value = maxItems;
+            }
+            state.count = parseInt(input.value, 10);
+        }
+
+        function selectDistribution(distType) {
+            state.distribution = distType;
+            const cardLinks = document.getElementById('card-dist-links');
+            const cardPool = document.getElementById('card-dist-pool');
+            const badgeLinks = document.getElementById('badge-dist-links');
+            const badgePool = document.getElementById('badge-dist-pool');
+            const btnText = document.getElementById('btn-generate-text');
+
+            if (distType === 'links') {
+                cardLinks.className = 'text-left p-4 rounded-2xl border-2 transition-all bg-white/10 accent-border';
+                cardPool.className = 'text-left p-4 rounded-2xl border-2 transition-all bg-white/5 border-white/10 hover:border-white/25';
+                badgeLinks.classList.remove('hidden');
+                badgePool.classList.add('hidden');
+                btnText.textContent = 'Сгенерировать анонимные ссылки';
+            } else {
+                cardPool.className = 'text-left p-4 rounded-2xl border-2 transition-all bg-white/10 accent-border';
+                cardLinks.className = 'text-left p-4 rounded-2xl border-2 transition-all bg-white/5 border-white/10 hover:border-white/25';
+                badgePool.classList.remove('hidden');
+                badgeLinks.classList.add('hidden');
+                btnText.textContent = 'Запустить общий пул с исключением';
+            }
+        }
+
+        function adjustCount(delta) {
+            const input = document.getElementById('participant-count');
+            const max = DATASETS[state.theme].items.length;
+            let val = (parseInt(input.value, 10) || 2) + delta;
+            val = Math.max(2, Math.min(max, val));
+            input.value = val;
+            state.count = val;
+        }
+
+        function validateCount() {
+            const input = document.getElementById('participant-count');
+            const max = DATASETS[state.theme].items.length;
+            let val = parseInt(input.value, 10) || 2;
+            val = Math.max(2, Math.min(max, val));
+            input.value = val;
+            state.count = val;
+        }
+
+        function switchView(viewId) {
+            ['view-organizer', 'view-links-list', 'view-participant', 'view-pool'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+
+            const btnHome = document.getElementById('btn-home');
+            if (viewId === 'view-organizer') {
+                btnHome.classList.add('hidden');
+            } else {
+                btnHome.classList.remove('hidden');
+            }
+        }
+
+        function resetToOrganizer() {
+            // Очищаем хэш URL без перезагрузки страницы
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+            switchView('view-organizer');
+        }
+
+        // =========================================================================
+        // ГЕНЕРАЦИЯ РАЗДАЧИ (РЕЖИМ 1: ИНДИВИДУАЛЬНЫЕ ССЫЛКИ, РЕЖИМ 2: ОБЩИЙ ПУЛ)
+        // =========================================================================
+        function generateSession() {
+            validateCount();
+            const dataset = DATASETS[state.theme];
+            const shuffled = shuffleArray(dataset.items).slice(0, state.count);
+            const roomId = generateUniqueId();
+
+            if (state.distribution === 'links') {
+                const baseUrl = window.location.href.split('#')[0];
+                state.generatedLinks = shuffled.map((character, idx) => {
+                    const payload = {
+                        v: 1,
+                        type: 'ticket',
+                        room: roomId,
+                        slot: idx + 1,
+                        theme: state.theme,
+                        charId: character.id,
+                        token: generateUniqueId()
+                    };
+                    const encoded = encodePayload(payload);
+                    return {
+                        slot: idx + 1,
+                        url: `${baseUrl}#t=${encoded}`,
+                        copied: false
+                    };
+                });
+
+                renderLinksList();
+                switchView('view-links-list');
+                showToast(`Создано ${state.count} уникальных анонимных ссылок`, '🔗');
+            } else {
+                // Инициализация общего пула
+                const poolObj = {
+                    v: 1,
+                    type: 'pool',
+                    room: roomId,
+                    theme: state.theme,
+                    total: state.count,
+                    remainingIds: shuffled.map(item => item.id)
+                };
+                state.poolState = poolObj;
+                savePoolStateToStorage(poolObj);
+                updatePoolUrlHash(poolObj);
+                renderPoolView();
+                switchView('view-pool');
+                showToast('Общий пул готов! Каждый персонаж выпадет только один раз', '🎰');
+            }
+        }
+
+        // =========================================================================
+        // ОТРИСОВКА СПИСКА ИНДИВИДУАЛЬНЫХ ССЫЛОК (ДЛЯ ОРГАНИЗАТОРА)
+        // =========================================================================
+        function renderLinksList() {
+            const container = document.getElementById('links-container');
+            document.getElementById('list-theme-badge').textContent = DATASETS[state.theme].title;
+            container.innerHTML = '';
+
+            state.generatedLinks.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-2xl bg-black/30 border border-white/10 flex items-center justify-between gap-3 hover:border-white/25 transition';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center font-bold text-sm accent-text shrink-0">
+                            #${item.slot}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-white truncate">Участник №${item.slot}</p>
+                            <p class="text-[11px] text-white/45 truncate font-mono">${item.url}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onclick="copySingleLink(${index})" id="copy-btn-${index}"
+                            class="px-3 py-2 rounded-xl ${item.copied ? 'bg-emerald-600/40 text-emerald-200 border border-emerald-400/40' : 'bg-white/10 hover:bg-white/20 text-white'} text-xs font-semibold transition">
+                            ${item.copied ? '✓ Скопировано' : 'Копировать'}
+                        </button>
+                        <a href="${item.url}" target="_blank" title="Открыть в новой вкладке"
+                            class="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/75 hover:text-white text-xs transition">
+                            ↗
+                        </a>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function copySingleLink(index) {
+            const item = state.generatedLinks[index];
+            copyToClipboard(item.url);
+            item.copied = true;
+            renderLinksList();
+            showToast(`Ссылка для Участника №${item.slot} скопирована`, '📋');
+        }
+
+        function copyAllLinks() {
+            const themeTitle = DATASETS[state.theme].title;
+            const lines = [
+                `🎭 Анонимный розыгрыш (${themeTitle})`,
+                `Выберите свою свободную ссылку — персонажи не повторяются:`,
+                ''
+            ];
+            state.generatedLinks.forEach(item => {
+                lines.push(`Участник №${item.slot}: ${item.url}`);
+            });
+            copyToClipboard(lines.join('\n'));
+            state.generatedLinks.forEach(item => item.copied = true);
+            renderLinksList();
+            showToast('Все ссылки скопированы списком!', '✨');
+        }
+
+        // =========================================================================
+        // ЛОГИКА ПЕРСОНАЛЬНОЙ ССЫЛКИ УЧАСТНИКА (С ИСКЛЮЧЕНИЕМ И ЗАЩИТОЙ)
+        // =========================================================================
+        function getUsedTokensMap() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_USED_TOKENS_KEY) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        function markTokenAsUsed(token, charId) {
+            const map = getUsedTokensMap();
+            map[token] = { usedAt: Date.now(), charId };
+            localStorage.setItem(STORAGE_USED_TOKENS_KEY, JSON.stringify(map));
+        }
+
+        function handleIncomingTicket(ticket) {
+            state.currentTicket = ticket;
+            selectTheme(ticket.theme || 'shrek');
+            switchView('view-participant');
+
+            document.getElementById('participant-slot-label').textContent = `Анонимный билет #${ticket.slot || 1}`;
+
+            const usedMap = getUsedTokensMap();
+            const isAlreadyOpened = Boolean(usedMap[ticket.token]);
+
+            // Сброс подэкранов участника
+            ['participant-locked', 'participant-spinning', 'participant-revealed', 'participant-used-warning'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            if (isAlreadyOpened) {
+                // Показываем предупреждение, что ссылка уже активирована и исключена
+                document.getElementById('participant-used-warning').classList.remove('hidden');
+            } else {
+                document.getElementById('participant-locked').classList.remove('hidden');
+            }
+        }
+
+        function revealParticipantCard() {
+            if (!state.currentTicket) return;
+            const ticket = state.currentTicket;
+            const dataset = DATASETS[ticket.theme] || DATASETS.shrek;
+            const targetChar = dataset.items.find(c => c.id === ticket.charId) || dataset.items[0];
+
+            // Помечаем ссылку как использованную и исключённую
+            markTokenAsUsed(ticket.token, targetChar.id);
+
+            document.getElementById('participant-locked').classList.add('hidden');
+            document.getElementById('participant-spinning').classList.remove('hidden');
+
+            // Анимация перебора персонажей перед открытием
+            const spinnerEmoji = document.getElementById('spinner-emoji');
+            const spinnerName = document.getElementById('spinner-name');
+            let step = 0;
+            const totalSteps = 14;
+
+            const interval = setInterval(() => {
+                const randomItem = dataset.items[step % dataset.items.length];
+                spinnerEmoji.textContent = randomItem.emoji;
+                spinnerName.textContent = randomItem.name;
+                step++;
+
+                if (step >= totalSteps) {
+                    clearInterval(interval);
+                    showFinalTicketCharacter(targetChar);
+                }
+            }, 90);
+        }
+
+        function showFinalTicketCharacter(character) {
+            document.getElementById('participant-spinning').classList.add('hidden');
+            document.getElementById('participant-revealed').classList.remove('hidden');
+
+            document.getElementById('result-emoji').textContent = character.emoji;
+            document.getElementById('result-name').textContent = character.name;
+            document.getElementById('result-desc').textContent = character.desc;
+
+            state.isCardHidden = false;
+            document.getElementById('secret-card-content').classList.remove('hidden');
+            document.getElementById('secret-card-hidden').classList.add('hidden');
+            document.getElementById('toggle-privacy-text').textContent = 'Скрыть от чужих глаз';
+
+            launchConfetti();
+        }
+
+        function forceShowUsedResult() {
+            if (!state.currentTicket) return;
+            const dataset = DATASETS[state.currentTicket.theme] || DATASETS.shrek;
+            const targetChar = dataset.items.find(c => c.id === state.currentTicket.charId) || dataset.items[0];
+            document.getElementById('participant-used-warning').classList.add('hidden');
+            showFinalTicketCharacter(targetChar);
+        }
+
+        function togglePrivacyScreen() {
+            state.isCardHidden = !state.isCardHidden;
+            const content = document.getElementById('secret-card-content');
+            const hiddenPlaceholder = document.getElementById('secret-card-hidden');
+            const btnText = document.getElementById('toggle-privacy-text');
+
+            if (state.isCardHidden) {
+                content.classList.add('hidden');
+                hiddenPlaceholder.classList.remove('hidden');
+                btnText.textContent = 'Показать моего персонажа';
+            } else {
+                content.classList.remove('hidden');
+                hiddenPlaceholder.classList.add('hidden');
+                btnText.textContent = 'Скрыть от чужих глаз';
+            }
+        }
+
+        // =========================================================================
+        // ЛОГИКА ОБЩЕГО ПУЛА / ПО ОЧЕРЕДИ (С ИСКЛЮЧЕНИЕМ ПОСЛЕ КАЖДОГО ХОДА)
+        // =========================================================================
+        function savePoolStateToStorage(poolObj) {
+            localStorage.setItem(STORAGE_POOL_PREFIX + poolObj.room, JSON.stringify(poolObj));
+        }
+
+        function updatePoolUrlHash(poolObj) {
+            const encoded = encodePayload(poolObj);
+            history.replaceState(null, '', `#p=${encoded}`);
+        }
+
+        function handleIncomingPool(poolFromUrl) {
+            // Проверяем, нет ли в localStorage более свежего состояния этой комнаты (где уже исключили больше ролей)
+            let activePool = poolFromUrl;
+            try {
+                const savedRaw = localStorage.getItem(STORAGE_POOL_PREFIX + poolFromUrl.room);
+                if (savedRaw) {
+                    const savedPool = JSON.parse(savedRaw);
+                    if (savedPool && savedPool.remainingIds.length < poolFromUrl.remainingIds.length) {
+                        activePool = savedPool;
+                    }
+                }
+            } catch (e) {
+                console.warn(e);
+            }
+
+            state.poolState = activePool;
+            savePoolStateToStorage(activePool);
+            updatePoolUrlHash(activePool);
+            selectTheme(activePool.theme || 'shrek');
+            renderPoolView();
+            switchView('view-pool');
+        }
+
+        function renderPoolView() {
+            const pool = state.poolState;
+            if (!pool) return;
+
+            const dataset = DATASETS[pool.theme] || DATASETS.shrek;
+            document.getElementById('pool-theme-name').textContent = dataset.title;
+            document.getElementById('pool-remaining-count').textContent = pool.remainingIds.length;
+            document.getElementById('pool-total-count').textContent = pool.total;
+
+            const percent = Math.round((pool.remainingIds.length / pool.total) * 100);
+            document.getElementById('pool-progress-bar').style.width = `${percent}%`;
+
+            ['pool-stage-ready', 'pool-stage-spinning', 'pool-stage-result', 'pool-stage-empty'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            if (pool.remainingIds.length === 0) {
+                document.getElementById('pool-stage-empty').classList.remove('hidden');
+            } else {
+                document.getElementById('pool-stage-ready').classList.remove('hidden');
+            }
+        }
+
+        function drawFromPool() {
+            const pool = state.poolState;
+            if (!pool || pool.remainingIds.length === 0) return;
+
+            const dataset = DATASETS[pool.theme] || DATASETS.shrek;
+
+            // Случайно выбираем индекс из оставшихся и немедленно исключаем его
+            const randomIndex = Math.floor(Math.random() * pool.remainingIds.length);
+            const chosenId = pool.remainingIds[randomIndex];
+            pool.remainingIds.splice(randomIndex, 1);
+
+            // Сохраняем обновлённый пул без выпавшего персонажа
+            savePoolStateToStorage(pool);
+            updatePoolUrlHash(pool);
+
+            const chosenCharacter = dataset.items.find(item => item.id === chosenId) || dataset.items[0];
+
+            // Запускаем анимацию барабана
+            document.getElementById('pool-stage-ready').classList.add('hidden');
+            document.getElementById('pool-stage-spinning').classList.remove('hidden');
+
+            const spinnerEmoji = document.getElementById('pool-spinner-emoji');
+            const spinnerName = document.getElementById('pool-spinner-name');
+            let step = 0;
+
+            const interval = setInterval(() => {
+                const temp = dataset.items[step % dataset.items.length];
+                spinnerEmoji.textContent = temp.emoji;
+                spinnerName.textContent = temp.name;
+                step++;
+
+                if (step >= 12) {
+                    clearInterval(interval);
+                    document.getElementById('pool-stage-spinning').classList.add('hidden');
+                    document.getElementById('pool-stage-result').classList.remove('hidden');
+
+                    document.getElementById('pool-result-emoji').textContent = chosenCharacter.emoji;
+                    document.getElementById('pool-result-name').textContent = chosenCharacter.name;
+                    document.getElementById('pool-result-desc').textContent = chosenCharacter.desc;
+
+                    // Обновляем счётчик оставшихся
+                    document.getElementById('pool-remaining-count').textContent = pool.remainingIds.length;
+                    const percent = Math.round((pool.remainingIds.length / pool.total) * 100);
+                    document.getElementById('pool-progress-bar').style.width = `${percent}%`;
+
+                    launchConfetti();
+                }
+            }, 85);
+        }
+
+        function hidePoolResultForNext() {
+            renderPoolView();
+        }
+
+        function copyCurrentPoolUrl() {
+            copyToClipboard(window.location.href);
+            showToast('Ссылка с актуальным остатком персонажей скопирована!', '🔗');
+        }
+
+        // =========================================================================
+        // ВСПОМОГАТЕЛЬНЫЕ УТИЛИТЫ (БУФЕР ОБМЕНА, TOAST, КОНФЕТТИ)
+        // =========================================================================
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Ошибка копирования:', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        let toastTimer = null;
+        function showToast(message, icon = '✅') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').textContent = message;
+            document.getElementById('toast-icon').textContent = icon;
+
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 2800);
+        }
+
+        // Анимация конфетти на Canvas
+        function launchConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const colors = state.theme === 'shrek'
+                ? ['#a3e635', '#22c55e', '#fde047', '#ffffff', '#4ade80']
+                : ['#ef4444', '#f59e0b', '#fbbf24', '#ffffff', '#dc2626'];
+
+            const pieces = Array.from({ length: 75 }, () => ({
+                x: canvas.width / 2 + (Math.random() - 0.5) * 160,
+                y: canvas.height / 2,
+                vx: (Math.random() - 0.5) * 14,
+                vy: (Math.random() - 0.85) * 15,
+                size: Math.random() * 7 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                vRot: (Math.random() - 0.5) * 12
+            }));
+
+            let frame = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.38; // гравитация
+                    p.rotation += p.vRot;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                    ctx.restore();
+                });
+
+                frame++;
+                if (frame < 95) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            animate();
+        }
+
+        // =========================================================================
+        // РОУТИНГ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ (ЧТЕНИЕ ПАРАМЕТРОВ ИЗ URL-ХЭША)
+        // =========================================================================
+        function initFromUrl() {
+            const hash = window.location.hash;
+            if (hash.startsWith('#t=')) {
+                const payload = decodePayload(hash.substring(3));
+                if (payload && payload.type === 'ticket') {
+                    handleIncomingTicket(payload);
+                    return;
+                }
+            } else if (hash.startsWith('#p=')) {
+                const payload = decodePayload(hash.substring(3));
+                if (payload && payload.type === 'pool') {
+                    handleIncomingPool(payload);
+                    return;
+                }
+            }
+
+            // По умолчанию открываем экран организатора
+            selectTheme('shrek');
+            selectDistribution('links');
+            switchView('view-organizer');
+        }
+
+        window.addEventListener('hashchange', initFromUrl);
+        window.addEventListener('DOMContentLoaded', initFromUrl);
+    </script>
+</body>
+</html>
