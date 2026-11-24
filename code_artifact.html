@@ -102,20 +102,22 @@
         <section id="loading-screen" class="card-surface glass border rounded-3xl p-10 shadow-2xl text-center">
             <div class="text-5xl mb-4 animate-bounce">🧅</div>
             <h2 class="text-xl font-bold">Синхронизация общего пула...</h2>
-            <p class="text-xs opacity-70 mt-2">Проверяем актуальное количество свободных мест</p>
+            <p id="loading-subtext" class="text-xs opacity-70 mt-2">Проверяем актуальное количество свободных мест</p>
         </section>
 
         <!-- ЭКРАН ОШИБКИ СЕТИ -->
         <section id="error-screen" class="hidden card-surface glass border border-red-400/40 rounded-3xl p-8 shadow-2xl text-center">
             <div class="text-5xl mb-3">⚠️</div>
             <h2 class="text-xl font-bold text-red-200">Не удалось подключиться к облачному пулу</h2>
-            <p id="error-message-text" class="text-xs opacity-80 mt-2 max-w-md mx-auto">Проверьте интернет-соединение или настройки ключа JSONBin.</p>
+            <p id="error-message-text" class="text-xs opacity-80 mt-2 max-w-md mx-auto">
+                Сервер синхронизации (api.jsonbin.io) не ответил. Если включён VPN или корпоративный прокси — попробуйте сменить режим или обновить страницу.
+            </p>
             <button onclick="syncFromCloud(true)" class="accent-btn mt-6 px-6 py-3 rounded-xl font-bold text-sm">
                 Повторить попытку
             </button>
         </section>
 
-        <!-- ЭКРАН 1: СТАРТ ЖЕРЕБЬЁВКИ (если пул ещё не запущен) -->
+        <!-- ЭКРАН 1: СТАРТ ЖЕРЕБЬЁВКИ -->
         <section id="setup-screen" class="hidden card-surface glass border rounded-3xl p-6 sm:p-8 shadow-2xl">
             <div class="text-center mb-7">
                 <span class="accent-badge inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border mb-3">
@@ -258,29 +260,40 @@
             }
             syncFromCloud(true);
 
-            // Фоновая синхронизация каждые 6 секунд
+            // Фоновая синхронизация каждые 7 секунд
             setInterval(() => {
                 if (!isRolling && !isShowingResult) {
                     syncFromCloud(false);
                 }
-            }, 6000);
+            }, 7000);
         });
 
-        async function fetchWithTimeout(url, options, timeoutMs = 5000) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                const res = await fetch(url, { ...options, signal: controller.signal });
-                clearTimeout(timer);
-                return res;
-            } catch (err) {
-                clearTimeout(timer);
-                throw err;
+        // Запрос с автоматическими повторными попытками при обрыве/медленной сети
+        async function fetchWithRetry(url, options, retries = 3, delayMs = 800) {
+            let lastError;
+            for (let attempt = 1; attempt <= retries; attempt++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response;
+                } catch (err) {
+                    lastError = err;
+                    if (attempt < retries) {
+                        const subtext = document.getElementById('loading-subtext');
+                        if (subtext) {
+                            subtext.textContent = `Повторное подключение к серверу (попытка ${attempt + 1} из ${retries})...`;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, delayMs));
+                    }
+                }
             }
+            throw lastError;
         }
 
         async function fetchCloudRecord() {
-            const response = await fetchWithTimeout(`${JSONBIN_URL}/latest`, {
+            const response = await fetchWithRetry(`${JSONBIN_URL}/latest`, {
                 method: 'GET',
                 cache: 'no-store',
                 headers: {
@@ -288,15 +301,12 @@
                     'X-Bin-Meta': 'false'
                 }
             });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
             lastSyncTimestamp = Date.now();
             return await response.json();
         }
 
         async function updateCloudRecord(data) {
-            const response = await fetchWithTimeout(JSONBIN_URL, {
+            const response = await fetchWithRetry(JSONBIN_URL, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -304,9 +314,6 @@
                 },
                 body: JSON.stringify(data)
             });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
             lastSyncTimestamp = Date.now();
             return await response.json();
         }
@@ -317,6 +324,7 @@
 
             if (showLoader && !poolState) {
                 hideAllScreens();
+                document.getElementById('loading-subtext').textContent = 'Проверяем актуальное количество свободных мест';
                 document.getElementById('loading-screen').classList.remove('hidden');
             }
 
@@ -339,10 +347,11 @@
                     showSetupScreen();
                 }
             } catch (err) {
-                if (showLoader) {
+                if (showLoader && !poolState) {
                     hideAllScreens();
                     document.getElementById('error-screen').classList.remove('hidden');
-                    document.getElementById('error-message-text').textContent = `Ошибка связи с сервером (${err.message}). Проверьте подключение к сети.`;
+                    document.getElementById('error-message-text').textContent =
+                        `Не удалось получить ответ от api.jsonbin.io (${err.message}). Проверьте интернет или отключите блокировщики/VPN для этого сайта.`;
                 }
             } finally {
                 if (syncIcon) syncIcon.classList.remove('animate-spin');
